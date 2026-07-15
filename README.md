@@ -1,5 +1,7 @@
 # zongrui.org
 
+Live site: [https://zongrui.org](https://zongrui.org)
+
 ZongRui 的个人介绍网站。以深色技术编辑风呈现 Rust、机器人、嵌入式、Linux、网络基础设施、AI 工具与网页作品。
 
 ## 本地开发
