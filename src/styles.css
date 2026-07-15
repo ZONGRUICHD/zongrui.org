@@ -771,10 +771,9 @@ img {
 
 .robot-visual__photo {
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 4 / 3;
   object-fit: cover;
-  object-position: center 56%;
-  filter: saturate(0.94) contrast(1.04);
+  object-position: center;
 }
 
 .robot-visual__rust {

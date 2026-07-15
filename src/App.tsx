@@ -127,8 +127,10 @@ function RobotVisual() {
       <div className="robot-visual__frame">
         <img
           className="robot-visual__photo"
-          src="/assets/robomaster-infantry.jpg"
-          alt="搭载麦克纳姆轮和双轴云台的 RoboMaster 机器人"
+          src="/assets/xjtlu-robomaster-infantry.gif"
+          alt="2019 XJTLU RoboMaster 步兵机器人实机运行画面"
+          loading="lazy"
+          decoding="async"
         />
         <div className="robot-visual__rust" aria-label="使用 Rust 构建">
           <img src="/assets/rust-logo.svg" alt="" aria-hidden="true" />
@@ -137,7 +139,7 @@ function RobotVisual() {
         </div>
       </div>
       <figcaption>
-        <span>ROBOMASTER ROBOT / INFANTRY ARCHITECTURE</span>
+        <span>ROBOMASTER INFANTRY / XJTLU 2019</span>
         <small>RUST · STM32 · CAN · NO_STD</small>
       </figcaption>
     </figure>
@@ -507,7 +509,9 @@ function App() {
             </span>
             <span>
               Visual credits:{' '}
-              <a href="https://commons.wikimedia.org/wiki/File:RoboMaster_robot_as_an_exhibit_in_the_Nanshan_Museum.jpg" target="_blank" rel="noreferrer">RoboMaster photo — Underbar dk / CC BY-SA 4.0</a>
+              <a href="https://github.com/AlchemicRonin/-STM32-RoboMaster-/blob/master/2019%20XJTLU%20Infantry/XJTLU%20Infantry.gif" target="_blank" rel="noreferrer">XJTLU Infantry — Alchemic Ronin</a>
+              {' / '}
+              <a href="/assets/XJTLU-INFANTRY-LICENSE.txt">MIT</a>
               {' · '}
               <a href="https://commons.wikimedia.org/wiki/File:Rust_programming_language_black_logo.svg" target="_blank" rel="noreferrer">Rust logo — Rust Foundation / CC BY 4.0</a>
             </span>
