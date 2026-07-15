@@ -127,7 +127,7 @@ function RobotVisual() {
       <div className="robot-visual__frame">
         <img
           className="robot-visual__photo"
-          src="/assets/xjtlu-robomaster-infantry.gif"
+          src="/assets/xjtlu-robomaster-infantry.gif?v=39cca43"
           alt="2019 XJTLU RoboMaster 步兵机器人实机运行画面"
           loading="lazy"
           decoding="async"
