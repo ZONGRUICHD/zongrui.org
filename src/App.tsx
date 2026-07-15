@@ -121,40 +121,26 @@ function HeroVisual() {
 
 function RobotVisual() {
   return (
-    <div
+    <figure
       className="robot-visual"
-      role="img"
-      aria-label="RM Robot Rust 控制系统：STM32 控制板连接底盘、云台、遥控与视觉模块"
     >
-      <div className="robot-board">
-        <span className="board-trace board-trace--a" />
-        <span className="board-trace board-trace--b" />
-        <span className="board-trace board-trace--c" />
-        <div className="board-core">
-          <strong>STM32</strong>
-          <small>F407 / 1 kHz</small>
+      <div className="robot-visual__frame">
+        <img
+          className="robot-visual__photo"
+          src="/assets/robomaster-infantry.jpg"
+          alt="搭载麦克纳姆轮和双轴云台的 RoboMaster 机器人"
+        />
+        <div className="robot-visual__rust" aria-label="使用 Rust 构建">
+          <img src="/assets/rust-logo.svg" alt="" aria-hidden="true" />
+          <span>BUILT WITH</span>
+          <strong>RUST</strong>
         </div>
-        <div className="board-port board-port--one">CAN 1</div>
-        <div className="board-port board-port--two">CAN 2</div>
-        <div className="board-port board-port--three">S.BUS</div>
-        <div className="board-port board-port--four">RGB-D</div>
-        <span className="board-chip board-chip--one" />
-        <span className="board-chip board-chip--two" />
-        <span className="board-chip board-chip--three" />
       </div>
-      <div className="robot-node robot-node--vision">
-        <strong>VISION</strong>
-        <small>Orange Pi</small>
-      </div>
-      <div className="robot-node robot-node--drive">
-        <strong>DRIVE</strong>
-        <small>4 × M3508</small>
-      </div>
-      <div className="robot-node robot-node--gimbal">
-        <strong>GIMBAL</strong>
-        <small>Yaw / Pitch</small>
-      </div>
-    </div>
+      <figcaption>
+        <span>ROBOMASTER ROBOT / INFANTRY ARCHITECTURE</span>
+        <small>RUST · STM32 · CAN · NO_STD</small>
+      </figcaption>
+    </figure>
   )
 }
 
@@ -404,13 +390,14 @@ function App() {
 
           <div className="story-grid">
             <a className="story-card story-card--memory" href="https://2022314.xyz" target="_blank" rel="noreferrer" data-reveal>
-              <div className="memory-window" aria-hidden="true">
-                <div className="memory-window__bar"><i /><i /><i /><span>2022314.xyz</span></div>
-                <div className="memory-window__scene">
-                  <span>909</span>
-                  <small>青春赛季</small>
-                  <b>2022 — 2025</b>
-                </div>
+              <div className="site-capture site-capture--memory">
+                <img
+                  src="/assets/2022314-home.webp"
+                  alt="2022314.xyz 毕业纪念网站真实首屏，展示 909 标识与教室门口照片"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <span>LIVE CAPTURE · 2022314.XYZ</span>
               </div>
               <div className="story-card__copy">
                 <p>MEMORY / REACT</p>
@@ -420,10 +407,14 @@ function App() {
             </a>
 
             <a className="story-card story-card--notes" href="https://zongtech.xyz" target="_blank" rel="noreferrer" data-reveal>
-              <div className="notes-cover" aria-hidden="true">
-                <span>FIELD<br />NOTES</span>
-                <i>04</i>
-                <small>LINUX / AI / NETWORKS</small>
+              <div className="site-capture site-capture--notes">
+                <img
+                  src="/assets/zongtech-home.webp"
+                  alt="zongtech.xyz 真实首屏，展示 ZONGRUICHD 导航与动漫主视觉"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <span>LIVE CAPTURE · ZONGTECH.XYZ</span>
               </div>
               <div className="story-card__copy">
                 <p>WRITING / BUILD LOG</p>
@@ -447,7 +438,7 @@ function App() {
               <p>
                 我喜欢让代码离开编辑器，进入设备、网络与真实生活；也愿意用清晰的文档和界面，让别人能够理解并继续维护它。
               </p>
-              <blockquote>Make it real. Make it legible. Keep it evolving.</blockquote>
+              <blockquote>{'Programming in Ciallo～(∠・ω< )⌒★'}</blockquote>
             </div>
           </div>
         </section>
@@ -510,6 +501,16 @@ function App() {
           <div className="footer-meta">
             <span>© {new Date().getFullYear()} ZongRui</span>
             <span>No trackers. No cookies.</span>
+            <span>
+              Typography: JetBrains Mono · HarmonyOS Sans SC ·{' '}
+              <a href="/assets/HarmonyOS-Sans-LICENSE.txt">License</a>
+            </span>
+            <span>
+              Visual credits:{' '}
+              <a href="https://commons.wikimedia.org/wiki/File:RoboMaster_robot_as_an_exhibit_in_the_Nanshan_Museum.jpg" target="_blank" rel="noreferrer">RoboMaster photo — Underbar dk / CC BY-SA 4.0</a>
+              {' · '}
+              <a href="https://commons.wikimedia.org/wiki/File:Rust_programming_language_black_logo.svg" target="_blank" rel="noreferrer">Rust logo — Rust Foundation / CC BY 4.0</a>
+            </span>
             <a href="#top">返回顶部 ↑</a>
           </div>
         </div>
