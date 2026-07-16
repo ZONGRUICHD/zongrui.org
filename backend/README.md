@@ -26,8 +26,8 @@ github: {schemaVersion:1, kind:"github", login, totalContributions,
          startedAt, endedAt, weeks:[{firstDay, days:[
          {date,weekday,count,level}]}], updatedAt}
 
-codex:  {schemaVersion:1, kind:"codex", totalTurns, activeDays,
-         startedAt, endedAt, days:[{date,count,level}], updatedAt}
+codex:  {schemaVersion:1, kind:"codex", totalTurns, totalTokens, activeDays,
+         startedAt, endedAt, days:[{date,count,level,tokens}], updatedAt}
 ```
 
 The server rebuilds every accepted object from its allowed fields and adds a
@@ -78,10 +78,13 @@ rule is added for the Python port.
 ## Codex blue-wall sync
 
 The exporter scans `~/.codex/sessions` and `~/.codex/archived_sessions` one
-JSONL record at a time. It tracks each `session_meta` source, excludes periods
-whose source is `subagent`, deduplicates `user_message` timestamps, and converts
-them into the latest 365 UTC+8 calendar days. It never emits message text,
-images, tool arguments, responses, or file contents.
+JSONL record at a time. It deduplicates top-level `user_message` timestamps and
+turns cumulative `total_token_usage.total_tokens` snapshots into per-day deltas.
+Token snapshots are grouped by the first `session_meta` ID so active and archived
+copies cannot be counted twice; subagent-rooted files are excluded because they
+replay their parent session's cumulative counters. Everything is converted into
+the latest 365 UTC+8 calendar days. It never emits message text, images, tool
+arguments, responses, or file contents.
 
 ```bash
 python3.14 scripts/export-codex-activity.py \

@@ -4,6 +4,7 @@ export type ActivityDay = {
   date: string
   count: number
   level: number
+  tokens: number
 }
 
 export type ActivityWeek = {
@@ -19,6 +20,7 @@ export type ActivityResponse = {
   codex: {
     days: ActivityDay[]
     totalTurns: number
+    totalTokens: number
     activeDays: number
   }
   updatedAt?: string
@@ -44,8 +46,9 @@ function normaliseDay(value: unknown): ActivityDay | null {
   const count = Math.round(finiteNumber(value.count) ?? 0)
   const fallbackLevel = count === 0 ? 0 : count < 3 ? 1 : count < 7 ? 2 : count < 15 ? 3 : 4
   const level = Math.min(4, Math.max(0, Math.round(finiteNumber(value.level) ?? fallbackLevel)))
+  const tokens = Math.round(finiteNumber(value.tokens) ?? 0)
 
-  return { date: value.date, count, level }
+  return { date: value.date, count, level, tokens }
 }
 
 function normaliseActivity(value: unknown): ActivityResponse {
@@ -84,6 +87,8 @@ function normaliseActivity(value: unknown): ActivityResponse {
     ?? githubDays.filter((day) => day.count > 0).length
   const totalTurns = finiteNumber(codex.totalTurns)
     ?? codexDays.reduce((sum, day) => sum + day.count, 0)
+  const totalTokens = finiteNumber(codex.totalTokens)
+    ?? codexDays.reduce((sum, day) => sum + day.tokens, 0)
   const codexActiveDays = finiteNumber(codex.activeDays)
     ?? codexDays.filter((day) => day.count > 0).length
   const updatedAt = typeof value.updatedAt === 'string'
@@ -103,6 +108,7 @@ function normaliseActivity(value: unknown): ActivityResponse {
     codex: {
       days: codexDays,
       totalTurns: Math.round(totalTurns),
+      totalTokens: Math.round(totalTokens),
       activeDays: Math.round(codexActiveDays),
     },
     updatedAt,
@@ -147,16 +153,23 @@ function formatUpdatedAt(value?: string) {
   }).format(parsed)}`
 }
 
+const compactNumberFormatter = new Intl.NumberFormat('en-US', {
+  notation: 'compact',
+  maximumFractionDigits: 2,
+})
+
 type ActivityWallProps = {
   tone: WallTone
   title: string
   kicker: string
-  description: string
+  description?: string
   weeks: ActivityWeek[]
   total: number
   activeDays: number
   totalLabel: string
   countLabel: string
+  tokenTotal?: number
+  showDayTokens?: boolean
 }
 
 function ActivityWall({
@@ -169,6 +182,8 @@ function ActivityWall({
   activeDays,
   totalLabel,
   countLabel,
+  tokenTotal,
+  showDayTokens = false,
 }: ActivityWallProps) {
   const viewportRef = useRef<HTMLDivElement>(null)
   const hasPositionedLatestRef = useRef(false)
@@ -191,13 +206,24 @@ function ActivityWall({
         <div>
           <p>{kicker}</p>
           <h3 id={`${tone}-wall-title`}>{title}</h3>
-          <span>{description}</span>
+          {description && <span>{description}</span>}
         </div>
         <dl className="activity-wall__stats">
           <div>
             <dt>{totalLabel}</dt>
             <dd>{total.toLocaleString('zh-CN')}</dd>
           </div>
+          {tokenTotal !== undefined && (
+            <div>
+              <dt>TOKENS</dt>
+              <dd
+                aria-label={`${tokenTotal.toLocaleString('en-US')} Tokens`}
+                title={`${tokenTotal.toLocaleString('en-US')} Tokens`}
+              >
+                {compactNumberFormatter.format(tokenTotal)}
+              </dd>
+            </div>
+          )}
           <div>
             <dt>ACTIVE DAYS</dt>
             <dd>{activeDays.toLocaleString('zh-CN')}</dd>
@@ -223,7 +249,10 @@ function ActivityWall({
                     const day = week.days[dayIndex]
                     if (!day) return <span className="activity-wall__day is-placeholder" aria-hidden="true" key={dayIndex} />
 
-                    const label = `${formatDate(day.date)}：${day.count} ${countLabel}`
+                    const tokenLabel = showDayTokens
+                      ? `，${day.tokens.toLocaleString('en-US')} Tokens`
+                      : ''
+                    const label = `${formatDate(day.date)}：${day.count} ${countLabel}${tokenLabel}`
                     return (
                       <span
                         className="activity-wall__day"
@@ -340,12 +369,13 @@ export function ActivityWalls() {
               tone="codex"
               kicker="CODEX / BLUE WALL"
               title="Codex Blue Wall"
-              description="仅上传按日聚合次数，不上传任何会话正文。"
               weeks={codexWeeks}
               total={activity.codex.totalTurns}
               activeDays={activity.codex.activeDays}
               totalLabel="CODEX TURNS"
               countLabel="次 Codex 使用"
+              tokenTotal={activity.codex.totalTokens}
+              showDayTokens
             />
           </div>
         )}

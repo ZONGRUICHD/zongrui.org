@@ -27,6 +27,7 @@ NO_CACHE: Final = "no-store"
 MAX_DAYS: Final = 400
 MAX_WEEKS: Final = 54
 MAX_COUNT: Final = 1_000_000_000
+MAX_TOKEN_COUNT: Final = 9_007_199_254_740_991
 MAX_BODY_HARD_LIMIT: Final = 1_048_576
 
 
@@ -81,7 +82,13 @@ def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
-def _normalise_days(days: Any, field: str, *, include_weekday: bool) -> list[dict[str, Any]]:
+def _normalise_days(
+    days: Any,
+    field: str,
+    *,
+    include_weekday: bool,
+    include_tokens: bool = False,
+) -> list[dict[str, Any]]:
     if not isinstance(days, list):
         raise ValidationError(f"{field} must be an array")
     if len(days) > MAX_DAYS:
@@ -96,6 +103,8 @@ def _normalise_days(days: Any, field: str, *, include_weekday: bool) -> list[dic
         expected_keys = {"date", "count", "level"}
         if include_weekday:
             expected_keys.add("weekday")
+        if include_tokens:
+            expected_keys.add("tokens")
         if set(item) != expected_keys:
             raise ValidationError(f"{item_field} has unsupported or missing fields")
 
@@ -128,6 +137,10 @@ def _normalise_days(days: Any, field: str, *, include_weekday: bool) -> list[dic
                 raise ValidationError(f"{item_field}.weekday must be an integer from 0 to 6")
             day["weekday"] = weekday
         day.update({"count": count, "level": level})
+        if include_tokens:
+            day["tokens"] = _non_negative_integer(
+                item.get("tokens"), f"{item_field}.tokens", maximum=MAX_TOKEN_COUNT
+            )
         normalised.append(day)
 
     normalised.sort(key=lambda item: item["date"])
@@ -169,8 +182,10 @@ def _normalise_boundary(value: Any, field: str) -> str:
     return _normalise_timestamp(value, field)
 
 
-def _non_negative_integer(value: Any, field: str) -> int:
-    if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= MAX_COUNT:
+def _non_negative_integer(
+    value: Any, field: str, *, maximum: int = MAX_COUNT
+) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= maximum:
         raise ValidationError(f"{field} must be a non-negative integer")
     return value
 
@@ -236,19 +251,38 @@ def normalise_activity(source: str, document: Any, *, stored: bool = False) -> d
             "updatedAt": _normalise_timestamp(document["updatedAt"], "updatedAt"),
         }
     else:
+        has_token_stats = "totalTokens" in document
         required = common | {"totalTurns", "activeDays", "days"}
+        if has_token_stats:
+            required.add("totalTokens")
         _check_keys(document, required, stored=stored)
-        days = _normalise_days(document["days"], "days", include_weekday=False)
+        days = _normalise_days(
+            document["days"],
+            "days",
+            include_weekday=False,
+            include_tokens=has_token_stats,
+        )
+        if not has_token_stats:
+            for day in days:
+                day["tokens"] = 0
         total_turns = _non_negative_integer(document["totalTurns"], "totalTurns")
+        total_tokens = _non_negative_integer(
+            document.get("totalTokens", 0),
+            "totalTokens",
+            maximum=MAX_TOKEN_COUNT,
+        )
         active_days = _non_negative_integer(document["activeDays"], "activeDays")
         if sum(day["count"] for day in days) != total_turns:
             raise ValidationError("totalTurns does not match days")
+        if sum(day["tokens"] for day in days) != total_tokens:
+            raise ValidationError("totalTokens does not match days")
         if sum(day["count"] > 0 for day in days) != active_days:
             raise ValidationError("activeDays does not match days")
         result = {
             "schemaVersion": 1,
             "kind": "codex",
             "totalTurns": total_turns,
+            "totalTokens": total_tokens,
             "activeDays": active_days,
             "startedAt": _normalise_boundary(document["startedAt"], "startedAt"),
             "endedAt": _normalise_boundary(document["endedAt"], "endedAt"),

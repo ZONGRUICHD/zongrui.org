@@ -2278,14 +2278,15 @@ img {
     line-height: 1.5;
   }
 
-  .activity-wall__stats { display: flex; gap: clamp(1.5rem, 4vw, 3rem); margin: 0; }
-  .activity-wall__stats div { display: flex; flex-direction: column-reverse; }
+  .activity-wall__stats { display: flex; gap: clamp(1rem, 3vw, 2.5rem); margin: 0; }
+  .activity-wall__stats div { display: flex; min-width: 0; flex-direction: column-reverse; }
 
   .activity-wall__stats dt {
     margin-top: .4rem;
     color: var(--muted, #707070);
     font-size: .48rem;
     letter-spacing: .08em;
+    white-space: nowrap;
   }
 
   .activity-wall__stats dd {
@@ -2293,6 +2294,7 @@ img {
     font-size: clamp(1.35rem, 3vw, 2rem);
     line-height: 1;
     letter-spacing: -.05em;
+    white-space: nowrap;
   }
 
   .activity-wall__viewport {
@@ -2433,7 +2435,13 @@ img {
     .activity-walls__intro time { display: block; margin-top: 1.5rem; }
     .activity-wall { padding: 1.25rem 1rem; }
     .activity-wall__header { grid-template-columns: 1fr; gap: 1.4rem; }
-    .activity-wall__stats { justify-content: space-between; }
+    .activity-wall__stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(4.5rem, 1fr));
+      gap: .8rem;
+      width: 100%;
+    }
+    .activity-wall__stats dd { font-size: clamp(1.1rem, 5.5vw, 1.45rem); }
     .activity-wall__viewport { margin-right: -.2rem; }
     .activity-walls__error { align-items: stretch; flex-direction: column; }
     .activity-walls__error button { width: 100%; }
