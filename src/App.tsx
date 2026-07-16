@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { galGames } from './data/galGames'
 
 type FeatureBandProps = {
   eyebrow: string
@@ -244,6 +245,64 @@ function FeatureBand({
   )
 }
 
+function GalLibrary() {
+  return (
+    <section className="gal-library" id="gal" aria-labelledby="gal-title">
+      <div className="gal-library__inner">
+        <header className="gal-library__header" data-reveal>
+          <div>
+            <p className="section-kicker">STEAM LIBRARY / GALGAME ARCHIVE</p>
+            <h2 id="gal-title">我还是 Gal<br />老资历大师。</h2>
+          </div>
+          <div className="gal-library__summary">
+            <div className="gal-library__count" aria-label={`Steam GalGame 收藏共 ${galGames.length} 款`}>
+              <strong>{String(galGames.length).padStart(2, '0')}</strong>
+              <span>STEAM COLLECTION</span>
+            </div>
+            <p>来自我 Steam 里名为“GalGame”的真实收藏夹。不是愿望单，也不是临时凑出的推荐榜。</p>
+          </div>
+        </header>
+
+        <div className="gal-grid">
+          {galGames.map((game, index) => (
+            <a
+              className="gal-card"
+              href={`https://store.steampowered.com/app/${game.appId}`}
+              target="_blank"
+              rel="noreferrer"
+              key={game.appId}
+              data-reveal
+            >
+              <figure>
+                <div className="gal-card__cover">
+                  <img
+                    src={`/assets/steam-gal/${game.appId}.webp`}
+                    alt={`${game.title} Steam 库竖版封面`}
+                    width="300"
+                    height="450"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <span>APP {game.appId}</span>
+                </div>
+                <figcaption>
+                  <span className="gal-card__index">{String(index + 1).padStart(2, '0')}</span>
+                  <div>
+                    <p>{game.studio} / {game.year}</p>
+                    <h3>{game.title}</h3>
+                    <span>{game.caption}</span>
+                  </div>
+                  <span className="gal-card__arrow"><Arrow /></span>
+                </figcaption>
+              </figure>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function App() {
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -317,6 +376,7 @@ function App() {
             <div className="site-nav__modes">
               <a href="#work" onClick={closeMenu}>技术作品</a>
               <a href="#web" onClick={closeMenu}>网页与故事</a>
+              <a href="#gal" onClick={closeMenu}>Galgame 收藏</a>
             </div>
             <div className="site-nav__links">
               <a href="#about" onClick={closeMenu}>关于</a>
@@ -427,6 +487,8 @@ function App() {
           </div>
         </section>
 
+        <GalLibrary />
+
         <section className="about" id="about" aria-labelledby="about-title">
           <div className="about__inner">
             <div className="about__heading" data-reveal>
@@ -515,6 +577,7 @@ function App() {
               {' · '}
               <a href="https://commons.wikimedia.org/wiki/File:Rust_programming_language_black_logo.svg" target="_blank" rel="noreferrer">Rust logo — Rust Foundation / CC BY 4.0</a>
             </span>
+            <span>Steam library cover artwork © respective developers and publishers; shown for collection identification.</span>
             <a href="#top">返回顶部 ↑</a>
           </div>
         </div>
