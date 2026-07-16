@@ -16,30 +16,6 @@ type FeatureBandProps = {
   reverse?: boolean
 }
 
-const portals = [
-  {
-    index: '01',
-    title: 'GitHub',
-    domain: 'github.com/zongruichd',
-    description: '代码都在这里，写完的和还在施工的都有。',
-    href: 'https://github.com/zongruichd',
-  },
-  {
-    index: '02',
-    title: 'ZongTech',
-    domain: 'zongtech.xyz',
-    description: '服务器、工具、网络，还有各种踩坑记录。',
-    href: 'https://zongtech.xyz',
-  },
-  {
-    index: '03',
-    title: '2022314',
-    domain: '2022314.xyz',
-    description: '909 的毕业纪念站，留给以前的同学和自己。',
-    href: 'https://2022314.xyz',
-  },
-]
-
 function Arrow() {
   return <span aria-hidden="true">↗</span>
 }
@@ -509,7 +485,6 @@ function App() {
             </div>
             <div className="site-nav__links">
               <a href="#work" onClick={closeMenu}>作品</a>
-              <a href="#links" onClick={closeMenu}>站点</a>
             </div>
           </div>
         </nav>
@@ -610,28 +585,6 @@ function App() {
         <GalLibrary />
 
         <ActivityWalls />
-
-        <section className="portals" id="links" aria-labelledby="links-title">
-          <div className="portals__inner">
-            <div className="portals__header" data-reveal>
-              <p className="section-kicker">ELSEWHERE</p>
-              <h2 id="links-title">我还在这些地方<br />更新东西。</h2>
-            </div>
-            <div className="portal-list">
-              {portals.map((portal) => (
-                <a href={portal.href} target="_blank" rel="noreferrer" key={portal.index} data-reveal>
-                  <span className="portal-index">{portal.index}</span>
-                  <span className="portal-title">
-                    <strong>{portal.title}</strong>
-                    <small>{portal.domain}</small>
-                  </span>
-                  <span className="portal-description">{portal.description}</span>
-                  <span className="portal-arrow"><Arrow /></span>
-                </a>
-              ))}
-            </div>
-          </div>
-        </section>
       </main>
 
       <footer className="site-footer">
