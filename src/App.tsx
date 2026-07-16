@@ -20,22 +20,22 @@ const focusAreas = [
   {
     index: '01',
     title: 'Rust 与机器人',
-    description: '嵌入式控制、RoboMaster、传感器与设备间通信。',
+    description: 'STM32、RoboMaster、CAN 和各种传感器，最后都得落到实机上。',
   },
   {
     index: '02',
     title: 'Linux 与网络',
-    description: '系统维护、交换网络、代理基础设施与可观测性。',
+    description: '装服务、配交换机、抓包排障，也顺手记下踩过的坑。',
   },
   {
     index: '03',
     title: 'AI 与自动化',
-    description: '把模型接入真实工作流，减少重复劳动。',
+    description: '把模型接进我每天用的工具里，能省一步是一步。',
   },
   {
     index: '04',
-    title: '文档与视觉',
-    description: '让复杂的工程系统更容易阅读、理解和继续维护。',
+    title: '文档与网页',
+    description: '项目能跑以后，我还会补 README、操作说明和网页界面。',
   },
 ]
 
@@ -44,21 +44,21 @@ const portals = [
     index: '01',
     title: 'GitHub',
     domain: 'github.com/zongruichd',
-    description: '代码、实验与持续演进的公开项目。',
+    description: '代码都在这里，写完的和还在施工的都有。',
     href: 'https://github.com/zongruichd',
   },
   {
     index: '02',
     title: 'ZongTech',
     domain: 'zongtech.xyz',
-    description: 'Linux、AI 工具和网络部署的工程现场笔记。',
+    description: '服务器、工具、网络，还有各种踩坑记录。',
     href: 'https://zongtech.xyz',
   },
   {
     index: '03',
     title: '2022314',
     domain: '2022314.xyz',
-    description: '一段青春被保存为网页之后的样子。',
+    description: '909 的毕业纪念站，留给以前的同学和自己。',
     href: 'https://2022314.xyz',
   },
 ]
@@ -502,7 +502,7 @@ function App() {
             <BrandMark />
             <span className="brand-copy">
               <strong>ZongRui</strong>
-              <small>Builder · Developer · Explorer</small>
+              <small>Rust · RoboMaster · Linux</small>
             </span>
           </a>
           <a className="masthead-github" href="https://github.com/zongruichd" target="_blank" rel="noreferrer">
@@ -544,19 +544,19 @@ function App() {
         <section className="hero" id="top" aria-labelledby="hero-title">
           <div className="hero__inner">
             <div className="hero__copy" data-reveal>
-              <p className="hero-kicker">SYSTEMS · ROBOTS · USEFUL THINGS</p>
+              <p className="hero-kicker">RUST · ROBOMASTER · LINUX · NETWORKS</p>
               <h1 id="hero-title">
-                <span>把想法，</span>
-                <strong>做成能运行的东西。</strong>
+                <span>我写代码，</span>
+                <strong>也折腾机器和网络。</strong>
               </h1>
               <p className="hero-intro">
-                从 Rust 与机器人控制，到 Linux、交换网络和 AI 工具——我喜欢把复杂问题拆开，做成可靠、清晰、可以继续演进的系统。
+                平时主要写 Rust，做 RoboMaster 控制，也会管 Linux 服务器和交换机。缺什么工具，就自己补一个。
               </p>
-              <p className="hero-origin">Designed, built and documented in Shenzhen.</p>
+              <p className="hero-origin">Shenzhen, China · Student developer.</p>
               <div className="hero-actions">
-                <a className="button button--dark" href="#work">浏览代表作品</a>
+                <a className="button button--dark" href="#work">看看项目</a>
                 <a className="text-link" href="https://github.com/zongruichd" target="_blank" rel="noreferrer">
-                  查看 GitHub <Arrow />
+                  我的 GitHub <Arrow />
                 </a>
               </div>
             </div>
@@ -596,10 +596,10 @@ function App() {
         <section className="web-stories" id="web" aria-labelledby="web-title">
           <div className="section-intro" data-reveal>
             <div>
-              <p className="section-kicker">WEB WORK / PERSONAL STORIES</p>
-              <h2 id="web-title">代码也可以保存记忆，<br />或者成为一份长期笔记。</h2>
+              <p className="section-kicker">WEB / MEMORY / NOTES</p>
+              <h2 id="web-title">有些东西，<br />我想留在网上。</h2>
             </div>
-            <p>除了系统与设备，我也用网页记录共同经历、ACG 兴趣和工程现场。</p>
+            <p>2022314 是毕业纪念站；ZongTech 用来记服务器、工具和踩坑。</p>
           </div>
 
           <div className="story-grid">
@@ -616,7 +616,7 @@ function App() {
               <div className="story-card__copy">
                 <p>MEMORY / REACT</p>
                 <h3>909 青春赛季</h3>
-                <span>一枚可以反复打开的数字时间胶囊。 <Arrow /></span>
+                <span>毕业纪念站，偶尔回去翻一翻。 <Arrow /></span>
               </div>
             </a>
 
@@ -633,7 +633,7 @@ function App() {
               <div className="story-card__copy">
                 <p>WRITING / BUILD LOG</p>
                 <h3>ZongTech</h3>
-                <span>系统、工具和折腾过程的长期记录。 <Arrow /></span>
+                <span>装服务、改配置、排故，做过的都记一下。 <Arrow /></span>
               </div>
             </a>
           </div>
@@ -646,15 +646,15 @@ function App() {
         <section className="about" id="about" aria-labelledby="about-title">
           <div className="about__inner">
             <div className="about__heading" data-reveal>
-              <p className="section-kicker">ABOUT THE BUILDER</p>
-              <h2 id="about-title">你好，<br />我是 ZongRui。</h2>
+              <p className="section-kicker">ABOUT</p>
+              <h2 id="about-title">ZongRui，<br />深圳。</h2>
             </div>
             <div className="about__body" data-reveal>
               <p>
-                我是一名来自深圳的学生开发者，关注 Rust、嵌入式与机器人、Linux 运维、网络基础设施和 AI 工具。
+                我目前还是学生，住在深圳。平时写 Rust，做 RoboMaster 控制，也折腾 Linux、交换机、服务器和各种 AI 工具。
               </p>
               <p>
-                我喜欢让代码离开编辑器，进入设备、网络与真实生活；也愿意用清晰的文档和界面，让别人能够理解并继续维护它。
+                很多项目没什么宏大目标：我只是正好缺一个能用的东西，于是自己写。能跑之后，再慢慢补文档和界面。
               </p>
               <blockquote>{'Programming in Ciallo～(∠・ω< )⌒★'}</blockquote>
             </div>
@@ -664,8 +664,8 @@ function App() {
         <section className="focus" id="focus" aria-labelledby="focus-title">
           <div className="focus__inner">
             <div className="focus__header" data-reveal>
-              <p className="section-kicker">WHAT I KEEP RETURNING TO</p>
-              <h2 id="focus-title">四个方向，<br />同一种实践。</h2>
+              <p className="section-kicker">WHAT I AM WORKING ON</p>
+              <h2 id="focus-title">最近常折腾的<br />几件事。</h2>
             </div>
             <div className="focus-list">
               {focusAreas.map((area) => (
@@ -682,8 +682,8 @@ function App() {
         <section className="portals" id="links" aria-labelledby="links-title">
           <div className="portals__inner">
             <div className="portals__header" data-reveal>
-              <p className="section-kicker">FIND MORE</p>
-              <h2 id="links-title">三个入口，<br />同一个 ZongRui。</h2>
+              <p className="section-kicker">ELSEWHERE</p>
+              <h2 id="links-title">我还在这些地方<br />更新东西。</h2>
             </div>
             <div className="portal-list">
               {portals.map((portal) => (
@@ -708,7 +708,7 @@ function App() {
             <BrandMark />
             <div>
               <strong>ZongRui</strong>
-              <span>Systems, robots &amp; useful things.</span>
+              <span>Rust、机器人和最近在折腾的东西。</span>
             </div>
           </div>
           <div className="footer-links">

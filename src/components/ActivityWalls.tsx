@@ -334,8 +334,8 @@ export function ActivityWalls() {
       <div className="activity-walls__inner">
         <header className="activity-walls__intro">
           <div>
-            <p>BUILD LOG / DAILY ACTIVITY</p>
-            <h2 id="activity-walls-title">让每一天的<span>构建</span>留下坐标。</h2>
+            <p>GITHUB + CODEX / LAST 365 DAYS</p>
+            <h2 id="activity-walls-title">过去一年的<span>提交和 Codex 用量。</span></h2>
           </div>
           <time dateTime={activity?.updatedAt}>{formatUpdatedAt(activity?.updatedAt)}</time>
         </header>
@@ -358,7 +358,7 @@ export function ActivityWalls() {
               tone="github"
               kicker="GITHUB / GREEN WALL"
               title="GitHub Green Wall"
-              description="Commit by commit, the archive keeps growing."
+              description="GitHub 提交，按天统计。"
               weeks={activity.github.weeks}
               total={activity.github.totalContributions}
               activeDays={activity.github.activeDays}
