@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { galGames } from './data/galGames'
 
 type FeatureBandProps = {
@@ -246,6 +246,18 @@ function FeatureBand({
 }
 
 function GalLibrary() {
+  const railRef = useRef<HTMLDivElement>(null)
+
+  const scrollLibrary = (direction: -1 | 1) => {
+    const rail = railRef.current
+    if (!rail) return
+
+    rail.scrollBy({
+      left: direction * Math.max(rail.clientWidth * 0.82, 280),
+      behavior: 'smooth',
+    })
+  }
+
   return (
     <section className="gal-library" id="gal" aria-labelledby="gal-title">
       <div className="gal-library__inner">
@@ -263,7 +275,34 @@ function GalLibrary() {
           </div>
         </header>
 
-        <div className="gal-grid">
+        <div className="gal-library__rail-toolbar" data-reveal>
+          <p>13 COVERS · SCROLL / SWIPE / ARROWS</p>
+          <div className="gal-library__rail-controls" aria-label="Galgame 封面滚动控制">
+            <button type="button" onClick={() => scrollLibrary(-1)} aria-label="向左滚动 Galgame 封面">
+              ←
+            </button>
+            <button type="button" onClick={() => scrollLibrary(1)} aria-label="向右滚动 Galgame 封面">
+              →
+            </button>
+          </div>
+        </div>
+
+        <div
+          className="gal-grid"
+          ref={railRef}
+          tabIndex={0}
+          aria-label="Steam GalGame 横向封面长廊"
+          onKeyDown={(event) => {
+            if (event.key === 'ArrowLeft') {
+              event.preventDefault()
+              scrollLibrary(-1)
+            }
+            if (event.key === 'ArrowRight') {
+              event.preventDefault()
+              scrollLibrary(1)
+            }
+          }}
+        >
           {galGames.map((game, index) => (
             <a
               className="gal-card"

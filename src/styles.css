@@ -1249,17 +1249,87 @@ img {
   letter-spacing: 0.08em;
 }
 
-.gal-grid {
+.gal-library__rail-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.gal-library__rail-toolbar > p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 0.52rem;
+  line-height: 1;
+  letter-spacing: 0.08em;
+}
+
+.gal-library__rail-controls {
+  display: flex;
+  gap: 0.55rem;
+}
+
+.gal-library__rail-controls button {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  color: var(--paper);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  cursor: pointer;
+  transition: color 200ms ease, background 200ms ease, border-color 200ms ease, transform 160ms ease;
+}
+
+.gal-library__rail-controls button:hover {
+  color: var(--rpi-dark-blue);
+  background: var(--paper);
+  border-color: var(--paper);
+}
+
+.gal-library__rail-controls button:active {
+  transform: scale(0.96);
+}
+
+.gal-grid {
+  display: flex;
   gap: 1.15rem;
+  padding: 0.45rem 0.15rem 1.35rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  scroll-padding-inline: 0.15rem;
+  scroll-snap-type: x mandatory;
+  scrollbar-color: var(--rpi-light-red) rgba(255, 255, 255, 0.13);
+  scrollbar-width: thin;
+  overscroll-behavior-x: contain;
+}
+
+.gal-grid::-webkit-scrollbar {
+  height: 0.58rem;
+}
+
+.gal-grid::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.13);
+}
+
+.gal-grid::-webkit-scrollbar-thumb {
+  background: var(--rpi-light-red);
+  border: 2px solid var(--rpi-dark-blue);
 }
 
 .gal-card {
+  flex: 0 0 clamp(13rem, 19vw, 15.4rem);
   min-width: 0;
   color: var(--ink);
   background: var(--paper);
   box-shadow: 0 1.15rem 2.1rem rgba(3, 18, 44, 0.2);
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
   transition: transform 240ms ease, box-shadow 240ms ease;
 }
 
@@ -1730,8 +1800,8 @@ img {
     grid-template-columns: 1fr;
   }
 
-  .gal-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .gal-card {
+    flex-basis: 13.25rem;
   }
 
   .story-card--notes {
@@ -2005,8 +2075,21 @@ img {
   }
 
   .gal-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.72rem;
+    padding-bottom: 1rem;
+  }
+
+  .gal-card {
+    flex-basis: min(72vw, 11.5rem);
+  }
+
+  .gal-library__rail-toolbar {
+    margin-bottom: 0.7rem;
+  }
+
+  .gal-library__rail-controls button {
+    width: 2.5rem;
+    height: 2.5rem;
   }
 
   .gal-card figcaption {
