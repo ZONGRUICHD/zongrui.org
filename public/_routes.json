@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "include": [
+    "/api/articles",
+    "/api/articles/*",
+    "/articles",
+    "/articles/*",
+    "/sitemap.xml"
+  ],
+  "exclude": [
+    "/assets/*"
+  ]
+}

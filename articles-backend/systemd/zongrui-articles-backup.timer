@@ -1,0 +1,11 @@
+[Unit]
+Description=Nightly ZongRui articles backup
+
+[Timer]
+OnCalendar=*-*-* 03:20:00
+RandomizedDelaySec=20m
+Persistent=true
+Unit=zongrui-articles-backup.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,27 @@
+[Unit]
+Description=Back up ZongRui articles to private R2 with restic
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=zongrui-articles-backup
+Group=zongrui-articles-backup
+SupplementaryGroups=zongrui-articles-data
+WorkingDirectory=/opt/zongrui-articles
+Environment=ARTICLES_STATE_DIR=/var/lib/zongrui-articles
+Environment=ARTICLES_BACKUP_WORK_DIR=/var/cache/zongrui-articles-backup/staging
+EnvironmentFile=/etc/zongrui-articles-restic.env
+ExecStart=/bin/bash /opt/zongrui-articles/scripts/backup.sh
+UMask=0077
+CacheDirectory=zongrui-articles-backup
+CacheDirectoryMode=0700
+Environment=RESTIC_CACHE_DIR=/var/cache/zongrui-articles-backup/restic
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadOnlyPaths=/var/lib/zongrui-articles
+ReadWritePaths=/var/cache/zongrui-articles-backup
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6

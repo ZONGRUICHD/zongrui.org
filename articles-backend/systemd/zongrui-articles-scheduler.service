@@ -1,0 +1,20 @@
+[Unit]
+Description=Publish scheduled ZongRui articles
+After=zongrui-articles.service
+
+[Service]
+Type=oneshot
+User=zongrui-articles
+Group=zongrui-articles-data
+WorkingDirectory=/opt/zongrui-articles
+Environment=ARTICLES_DATABASE_URL=sqlite:////var/lib/zongrui-articles/articles.db
+EnvironmentFile=/etc/zongrui-articles.env
+ExecStart=/opt/zongrui-articles/.venv/bin/python -m app.scheduler
+UMask=0027
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/zongrui-articles
+RestrictAddressFamilies=AF_UNIX

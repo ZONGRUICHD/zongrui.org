@@ -1,0 +1,47 @@
+[Unit]
+Description=ZongRui Articles API
+After=network.target
+
+[Service]
+Type=simple
+User=zongrui-articles
+Group=zongrui-articles-data
+WorkingDirectory=/opt/zongrui-articles
+Environment=PYTHONUNBUFFERED=1
+Environment=ARTICLES_HOST=127.0.0.1
+Environment=ARTICLES_PORT=18232
+Environment=ARTICLES_DATABASE_URL=sqlite:////var/lib/zongrui-articles/articles.db
+Environment=ARTICLES_MEDIA_DIR=/var/lib/zongrui-articles/media
+EnvironmentFile=/etc/zongrui-articles.env
+ExecStart=/opt/zongrui-articles/.venv/bin/python -m app.server
+Restart=on-failure
+RestartSec=3s
+TimeoutStopSec=20s
+UMask=0027
+StateDirectory=zongrui-articles
+StateDirectoryMode=0750
+
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectClock=true
+ProtectControlGroups=true
+ProtectHome=true
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/zongrui-articles
+CapabilityBoundingSet=
+AmbientCapabilities=
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RemoveIPC=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictRealtime=true
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target
