@@ -520,14 +520,7 @@ function App() {
           <div className="hero__inner">
             <div className="hero__copy" data-reveal>
               <p className="hero-kicker">RUST · ROBOMASTER · LINUX · NETWORKS</p>
-              <h1 id="hero-title">
-                <span>我写代码，</span>
-                <strong>也折腾机器和网络。</strong>
-              </h1>
-              <p className="hero-intro">
-                平时主要写 Rust，做 RoboMaster 控制，也会管 Linux 服务器和交换机。缺什么工具，就自己补一个。
-              </p>
-              <p className="hero-origin">Shenzhen, China · Student developer.</p>
+              <h1 id="hero-title">{'Programming in Ciallo～(∠・ω< )⌒★'}</h1>
               <div className="hero-actions">
                 <a className="button button--dark" href="#work">看看项目</a>
                 <a className="text-link" href="https://github.com/zongruichd" target="_blank" rel="noreferrer">
