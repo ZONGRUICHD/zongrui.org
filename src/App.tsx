@@ -247,16 +247,124 @@ function FeatureBand({
 
 function GalLibrary() {
   const railRef = useRef<HTMLDivElement>(null)
+  const firstSetRef = useRef<HTMLDivElement>(null)
+  const loopSetRef = useRef<HTMLDivElement>(null)
+  const hoverPausedRef = useRef(false)
+  const focusPausedRef = useRef(false)
+  const touchPausedRef = useRef(false)
+  const resumeAtRef = useRef(0)
+
+  const pauseAutoScroll = (duration = 2400) => {
+    resumeAtRef.current = performance.now() + duration
+  }
 
   const scrollLibrary = (direction: -1 | 1) => {
     const rail = railRef.current
     if (!rail) return
 
+    pauseAutoScroll()
     rail.scrollBy({
       left: direction * Math.max(rail.clientWidth * 0.82, 280),
       behavior: 'smooth',
     })
   }
+
+  useEffect(() => {
+    const rail = railRef.current
+    const firstSet = firstSetRef.current
+    const loopSet = loopSetRef.current
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+
+    if (!rail || !firstSet || !loopSet || reducedMotion.matches) return
+
+    let animationFrame = 0
+    let previousTime = performance.now()
+
+    const stop = () => {
+      if (animationFrame) cancelAnimationFrame(animationFrame)
+      animationFrame = 0
+    }
+
+    const tick = (time: number) => {
+      const elapsed = Math.min(time - previousTime, 48)
+      previousTime = time
+
+      const paused = hoverPausedRef.current
+        || focusPausedRef.current
+        || touchPausedRef.current
+        || time < resumeAtRef.current
+
+      if (!paused) {
+        const loopPoint = loopSet.offsetLeft - firstSet.offsetLeft
+
+        if (loopPoint > 0) {
+          rail.scrollLeft += elapsed * 0.038
+
+          if (rail.scrollLeft >= loopPoint) {
+            rail.scrollLeft -= loopPoint
+          }
+        }
+      }
+
+      animationFrame = requestAnimationFrame(tick)
+    }
+
+    const start = () => {
+      if (animationFrame) return
+      previousTime = performance.now()
+      animationFrame = requestAnimationFrame(tick)
+    }
+
+    const visibilityObserver = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) start()
+        else stop()
+      },
+      { threshold: 0.05 },
+    )
+
+    visibilityObserver.observe(rail)
+
+    return () => {
+      visibilityObserver.disconnect()
+      stop()
+    }
+  }, [])
+
+  const renderGames = (duplicate = false) => galGames.map((game, index) => (
+    <a
+      className="gal-card"
+      href={`https://store.steampowered.com/app/${game.appId}`}
+      target="_blank"
+      rel="noreferrer"
+      key={`${duplicate ? 'loop' : 'main'}-${game.appId}`}
+      tabIndex={duplicate ? -1 : undefined}
+      data-reveal={duplicate ? undefined : true}
+    >
+      <figure>
+        <div className="gal-card__cover">
+          <img
+            src={`/assets/steam-gal/${game.appId}.webp`}
+            alt={`${game.title} Steam 库竖版封面`}
+            width="300"
+            height="450"
+            loading="lazy"
+            decoding="async"
+          />
+          <span>APP {game.appId}</span>
+        </div>
+        <figcaption>
+          <span className="gal-card__index">{String(index + 1).padStart(2, '0')}</span>
+          <div>
+            <p>{game.studio} / {game.year}</p>
+            <h3>{game.title}</h3>
+            <span>{game.caption}</span>
+          </div>
+          <span className="gal-card__arrow"><Arrow /></span>
+        </figcaption>
+      </figure>
+    </a>
+  ))
 
   return (
     <section className="gal-library" id="gal" aria-labelledby="gal-title">
@@ -271,12 +379,11 @@ function GalLibrary() {
               <strong>{String(galGames.length).padStart(2, '0')}</strong>
               <span>STEAM COLLECTION</span>
             </div>
-            <p>来自我 Steam 里名为“GalGame”的真实收藏夹。不是愿望单，也不是临时凑出的推荐榜。</p>
           </div>
         </header>
 
         <div className="gal-library__rail-toolbar" data-reveal>
-          <p>13 COVERS · SCROLL / SWIPE / ARROWS</p>
+          <p>{galGames.length} COVERS · AUTO LOOP</p>
           <div className="gal-library__rail-controls" aria-label="Galgame 封面滚动控制">
             <button type="button" onClick={() => scrollLibrary(-1)} aria-label="向左滚动 Galgame 封面">
               ←
@@ -291,7 +398,24 @@ function GalLibrary() {
           className="gal-grid"
           ref={railRef}
           tabIndex={0}
-          aria-label="Steam GalGame 横向封面长廊"
+          aria-label="Steam GalGame 自动横向封面长廊"
+          onMouseEnter={() => { hoverPausedRef.current = true }}
+          onMouseLeave={() => { hoverPausedRef.current = false }}
+          onFocusCapture={() => { focusPausedRef.current = true }}
+          onBlurCapture={() => {
+            focusPausedRef.current = false
+            pauseAutoScroll()
+          }}
+          onTouchStart={() => { touchPausedRef.current = true }}
+          onTouchEnd={() => {
+            touchPausedRef.current = false
+            pauseAutoScroll()
+          }}
+          onTouchCancel={() => {
+            touchPausedRef.current = false
+            pauseAutoScroll()
+          }}
+          onWheel={() => pauseAutoScroll(1800)}
           onKeyDown={(event) => {
             if (event.key === 'ArrowLeft') {
               event.preventDefault()
@@ -303,39 +427,12 @@ function GalLibrary() {
             }
           }}
         >
-          {galGames.map((game, index) => (
-            <a
-              className="gal-card"
-              href={`https://store.steampowered.com/app/${game.appId}`}
-              target="_blank"
-              rel="noreferrer"
-              key={game.appId}
-              data-reveal
-            >
-              <figure>
-                <div className="gal-card__cover">
-                  <img
-                    src={`/assets/steam-gal/${game.appId}.webp`}
-                    alt={`${game.title} Steam 库竖版封面`}
-                    width="300"
-                    height="450"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                  <span>APP {game.appId}</span>
-                </div>
-                <figcaption>
-                  <span className="gal-card__index">{String(index + 1).padStart(2, '0')}</span>
-                  <div>
-                    <p>{game.studio} / {game.year}</p>
-                    <h3>{game.title}</h3>
-                    <span>{game.caption}</span>
-                  </div>
-                  <span className="gal-card__arrow"><Arrow /></span>
-                </figcaption>
-              </figure>
-            </a>
-          ))}
+          <div className="gal-grid__group" ref={firstSetRef}>
+            {renderGames()}
+          </div>
+          <div className="gal-grid__group" ref={loopSetRef} aria-hidden="true">
+            {renderGames(true)}
+          </div>
         </div>
       </div>
     </section>
