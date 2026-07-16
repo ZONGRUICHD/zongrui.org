@@ -70,11 +70,7 @@ function Arrow() {
 function BrandMark() {
   return (
     <span className="brand-mark" aria-hidden="true">
-      <i />
-      <i />
-      <i />
-      <i />
-      <b>ZR</b>
+      <img src="/avatar.jpg" alt="" />
     </span>
   )
 }

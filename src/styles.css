@@ -140,39 +140,21 @@ img {
 
 .brand-mark {
   position: relative;
-  display: grid;
+  display: block;
   flex: 0 0 auto;
-  grid-template-columns: repeat(2, 1fr);
   width: 2.75rem;
   height: 2.75rem;
-  padding: 0.28rem;
   overflow: hidden;
-  color: var(--paper);
-  background: var(--rpi-red);
   border-radius: 0.8rem 0.8rem 0.8rem 0.25rem;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
 }
 
-.brand-mark i {
+.brand-mark img {
   display: block;
-  margin: 0.11rem;
-  background: rgba(255, 255, 255, 0.22);
-  border-radius: 50%;
-}
-
-.brand-mark i:nth-child(2),
-.brand-mark i:nth-child(3) {
-  background: rgba(255, 255, 255, 0.38);
-}
-
-.brand-mark b {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: -0.04em;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
 .brand-copy {
