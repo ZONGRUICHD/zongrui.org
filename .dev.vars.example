@@ -1,0 +1,6 @@
+# Local Pages Functions development only. Copy to .dev.vars; never commit secrets.
+ARTICLES_ORIGIN_URL=http://127.0.0.1:18232
+# Optional for a remote origin when Cloudflare Access is unavailable.
+ARTICLES_ORIGIN_SHARED_SECRET=
+CF_ACCESS_CLIENT_ID=
+CF_ACCESS_CLIENT_SECRET=

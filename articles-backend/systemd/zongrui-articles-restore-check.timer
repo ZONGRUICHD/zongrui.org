@@ -1,0 +1,11 @@
+[Unit]
+Description=Monthly restore verification for ZongRui articles
+
+[Timer]
+OnCalendar=monthly
+RandomizedDelaySec=6h
+Persistent=true
+Unit=zongrui-articles-restore-check.service
+
+[Install]
+WantedBy=timers.target

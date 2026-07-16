@@ -1,0 +1,23 @@
+[Unit]
+Description=Restore-check the latest ZongRui articles backup
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=zongrui-articles-backup
+Group=zongrui-articles-backup
+WorkingDirectory=/opt/zongrui-articles
+EnvironmentFile=/etc/zongrui-articles-restic.env
+ExecStart=/bin/bash /opt/zongrui-articles/scripts/restore-check.sh
+UMask=0077
+CacheDirectory=zongrui-articles-backup
+CacheDirectoryMode=0700
+Environment=RESTIC_CACHE_DIR=/var/cache/zongrui-articles-backup/restic
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=false
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/cache/zongrui-articles-backup /var/tmp
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6

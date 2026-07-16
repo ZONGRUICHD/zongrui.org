@@ -1,0 +1,9 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "zongrui-org",
+  "pages_build_output_dir": "./dist",
+  "compatibility_date": "2026-07-16",
+  "vars": {
+    "ARTICLES_ORIGIN_URL": "https://articles-origin.zongrui.org"
+  }
+}

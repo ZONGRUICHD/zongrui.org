@@ -2,9 +2,11 @@ node_modules/
 dist/
 .vite/
 .wrangler/
+_worker.bundle
 __pycache__/
 *.py[cod]
 backend/data/
 *.local
 *.log
 .DS_Store
+.dev.vars
