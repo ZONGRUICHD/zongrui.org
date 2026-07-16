@@ -7,7 +7,10 @@ import worker from './_worker.js'
  */
 export function onRequest(context) {
   const env = {
-    ...context.env,
+    ARTICLES_ORIGIN_URL: context.env.ARTICLES_ORIGIN_URL,
+    ARTICLES_ORIGIN_SHARED_SECRET: context.env.ARTICLES_ORIGIN_SHARED_SECRET,
+    CF_ACCESS_CLIENT_ID: context.env.CF_ACCESS_CLIENT_ID,
+    CF_ACCESS_CLIENT_SECRET: context.env.CF_ACCESS_CLIENT_SECRET,
     ASSETS: {
       fetch() {
         return context.next()
