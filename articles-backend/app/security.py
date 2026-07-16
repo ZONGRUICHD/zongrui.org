@@ -111,7 +111,10 @@ async def exchange_github_code(settings: Settings, code: str) -> dict[str, objec
     login = user.get("login")
     if not isinstance(user_id, int) or not isinstance(login, str):
         raise HTTPException(status_code=401, detail="GitHub user response is invalid")
-    if user_id != settings.admin_github_user_id or login.casefold() != settings.admin_github_login.casefold():
+    # GitHub's numeric user ID is stable across login renames and is the
+    # authoritative administrator allowlist. Keep the current login only for
+    # display and audit records.
+    if user_id != settings.admin_github_user_id:
         raise HTTPException(status_code=403, detail="this GitHub account is not an administrator")
     return {"id": user_id, "login": login, "avatarUrl": user.get("avatar_url")}
 

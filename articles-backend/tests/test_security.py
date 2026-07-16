@@ -71,12 +71,16 @@ def test_oauth_state_is_single_use() -> None:
         assert caught.value.status_code == 400
 
 
-def test_github_numeric_id_and_login_are_both_required(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_github_numeric_id_is_authoritative(monkeypatch: pytest.MonkeyPatch) -> None:
     from app import security
 
     monkeypatch.setattr(security.httpx, "AsyncClient", FakeGitHubClient)
     user = asyncio.run(exchange_github_code(get_settings(), "oauth-code"))
     assert user["id"] == 12345
+
+    FakeGitHubClient.user = {"id": 12345, "login": "RENAMED-ADMIN"}
+    renamed_user = asyncio.run(exchange_github_code(get_settings(), "oauth-code"))
+    assert renamed_user["login"] == "RENAMED-ADMIN"
 
     FakeGitHubClient.user = {"id": 54321, "login": "ZONGRUICHD"}
     try:
