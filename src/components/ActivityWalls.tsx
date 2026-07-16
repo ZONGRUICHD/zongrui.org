@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 export type ActivityDay = {
   date: string
@@ -170,10 +170,20 @@ function ActivityWall({
   totalLabel,
   countLabel,
 }: ActivityWallProps) {
+  const viewportRef = useRef<HTMLDivElement>(null)
+  const hasPositionedLatestRef = useRef(false)
   const dayCount = weeks.reduce(
     (sum, week) => sum + week.days.filter((day) => day !== null).length,
     0,
   )
+
+  useLayoutEffect(() => {
+    const viewport = viewportRef.current
+    if (!viewport || dayCount === 0 || hasPositionedLatestRef.current) return
+
+    viewport.scrollLeft = Math.max(0, viewport.scrollWidth - viewport.clientWidth)
+    hasPositionedLatestRef.current = true
+  }, [dayCount])
 
   return (
     <article className="activity-wall" data-tone={tone} aria-labelledby={`${tone}-wall-title`}>
@@ -200,10 +210,11 @@ function ActivityWall({
       ) : (
         <>
           <div
+            ref={viewportRef}
             className="activity-wall__viewport"
             role="region"
             tabIndex={0}
-            aria-label={`${title}，共 ${dayCount} 天记录，可横向滚动查看`}
+            aria-label={`${title}，共 ${dayCount} 天记录，当前显示最新记录，可向左横向滚动查看历史`}
           >
             <div className="activity-wall__calendar">
               {weeks.map((week, weekIndex) => (

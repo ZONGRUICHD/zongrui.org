@@ -56,9 +56,24 @@ sudo systemctl enable --now zongrui-activity
 curl --fail http://127.0.0.1:18231/health
 ```
 
-Keep the service bound to loopback and place an HTTPS reverse proxy at
-`api.zongrui.org`. If UFW is used, expose only the reverse proxy's chosen port;
-the Python port does not need a public firewall rule.
+The provided unit binds to loopback by default and is published at
+`api.zongrui.org` through Cloudflare Tunnel. When a trusted uploader shares the
+server's LAN, install `zongrui-activity-lan.conf.example` as a systemd drop-in
+and pair it with a destination-specific UFW allow rule:
+
+```bash
+sudo install -d /etc/systemd/system/zongrui-activity.service.d
+sudo install -m 0644 backend/systemd/zongrui-activity-lan.conf.example \
+  /etc/systemd/system/zongrui-activity.service.d/lan-upload.conf
+sudo ufw allow from 192.168.0.109 to 192.168.0.171 \
+  port 18231 proto tcp comment 'zongrui codex activity sync'
+sudo systemctl daemon-reload
+sudo systemctl restart zongrui-activity
+```
+
+This keeps public reads on Cloudflare Tunnel while the Windows Codex uploader
+uses `http://192.168.0.171:18231`. UFW remains default-deny and no general public
+rule is added for the Python port.
 
 ## Codex blue-wall sync
 
@@ -85,5 +100,6 @@ the same bearer secret.
 On Windows, `scripts/sync-codex-activity.ps1` wraps the exporter and POST. It can
 read the token from `ZONGRUI_ACTIVITY_SYNC_TOKEN`, or from a DPAPI-protected
 `token.clixml` stored under the current user's Local AppData. The production
-machine registers this wrapper as a six-hour Scheduled Task, so the server keeps
-the last good snapshot whenever the PC is offline.
+machine registers this wrapper as a six-hour Scheduled Task and passes the LAN
+endpoint explicitly, so the server keeps the last good snapshot whenever the PC
+is offline. The script's public HTTPS endpoint remains a safe manual fallback.
