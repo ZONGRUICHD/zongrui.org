@@ -81,10 +81,11 @@ The exporter scans `~/.codex/sessions` and `~/.codex/archived_sessions` one
 JSONL record at a time. It deduplicates top-level `user_message` timestamps and
 turns cumulative `total_token_usage.total_tokens` snapshots into per-day deltas.
 Token snapshots are grouped by the first `session_meta` ID so active and archived
-copies cannot be counted twice; subagent-rooted files are excluded because they
-replay their parent session's cumulative counters. Everything is converted into
-the latest 365 UTC+8 calendar days. It never emits message text, images, tool
-arguments, responses, or file contents.
+copies cannot be counted twice. A subagent's first cumulative snapshot is an
+inherited parent baseline, so only its later positive deltas are counted. This
+preserves real subagent usage without counting the inherited history twice.
+Everything is converted into the latest 365 UTC+8 calendar days. It never emits
+message text, images, tool arguments, responses, or file contents.
 
 ```bash
 python3.14 scripts/export-codex-activity.py \

@@ -37,6 +37,13 @@ class FileScan:
     turns: list[tuple[str, date]]
     session_id: str | None
     token_snapshots: list[tuple[datetime, int]]
+    token_counter_inherits_baseline: bool
+
+
+@dataclass(slots=True)
+class TokenSession:
+    snapshots: dict[int, datetime]
+    inherits_baseline: bool
 
 
 def parse_args() -> argparse.Namespace:
@@ -167,12 +174,11 @@ def scan_file(path: Path, first_day: date, last_day: date) -> tuple[FileScan | N
                             current_source_is_subagent = source_state
                     continue
 
-                # A subagent file contains a replay of its parent's metadata and
-                # cumulative counters. The first session_meta is authoritative;
-                # skipping the whole file prevents that replay from inflating the
-                # public total.
+                # A subagent counter starts from an inherited parent snapshot.
+                # We still collect it here; aggregate_tokens treats its first
+                # snapshot as a baseline and counts only later positive deltas.
                 if (
-                    root_source_is_subagent is False
+                    root_source_is_subagent is not None
                     and root_session_id is not None
                     and TOKEN_COUNT_RECORD.search(raw_line[:512]) is not None
                 ):
@@ -195,19 +201,29 @@ def scan_file(path: Path, first_day: date, last_day: date) -> tuple[FileScan | N
                     candidates.append((raw_timestamp, local_day))
     except OSError:
         return None, False
-    return FileScan(candidates, root_session_id, snapshots), True
+    return FileScan(
+        candidates,
+        root_session_id,
+        snapshots,
+        root_source_is_subagent is True,
+    ), True
 
 
 def aggregate_tokens(
-    sessions: dict[str, dict[int, datetime]], first_day: date, last_day: date
+    sessions: dict[str, TokenSession], first_day: date, last_day: date
 ) -> Counter[date]:
     """Convert per-session cumulative snapshots into UTC+8 daily increments."""
     counts: Counter[date] = Counter()
-    for snapshots_by_total in sessions.values():
+    for session in sessions.values():
         running_max = 0
+        needs_inherited_baseline = session.inherits_baseline
         for total, timestamp in sorted(
-            snapshots_by_total.items(), key=lambda item: (item[1], item[0])
+            session.snapshots.items(), key=lambda item: (item[1], item[0])
         ):
+            if needs_inherited_baseline:
+                running_max = total
+                needs_inherited_baseline = False
+                continue
             delta = max(0, total - running_max)
             running_max = max(running_max, total)
             local_day = timestamp.astimezone(CHINA_TIME).date()
@@ -244,7 +260,7 @@ def build_export(codex_home: Path, today: date) -> tuple[dict[str, Any], int, in
     first_day = today - timedelta(days=DAYS - 1)
     unique_timestamps: set[str] = set()
     counts: Counter[date] = Counter()
-    token_sessions: dict[str, dict[int, datetime]] = {}
+    token_sessions: dict[str, TokenSession] = {}
     scanned = 0
     unreadable = 0
 
@@ -262,11 +278,18 @@ def build_export(codex_home: Path, today: date) -> tuple[dict[str, Any], int, in
             unique_timestamps.add(timestamp)
             counts[local_day] += 1
         if file_scan.session_id is not None and file_scan.token_snapshots:
-            session = token_sessions.setdefault(file_scan.session_id, {})
+            session = token_sessions.setdefault(
+                file_scan.session_id,
+                TokenSession({}, file_scan.token_counter_inherits_baseline),
+            )
+            session.inherits_baseline = (
+                session.inherits_baseline
+                or file_scan.token_counter_inherits_baseline
+            )
             for timestamp, total in file_scan.token_snapshots:
-                previous = session.get(total)
+                previous = session.snapshots.get(total)
                 if previous is None or timestamp < previous:
-                    session[total] = timestamp
+                    session.snapshots[total] = timestamp
 
     token_counts = aggregate_tokens(token_sessions, first_day, today)
 
