@@ -1,0 +1,46 @@
+[Unit]
+Description=Zongrui activity wall API
+After=network.target
+
+[Service]
+Type=simple
+User=zongrui
+Group=zongrui
+WorkingDirectory=/opt/zongrui-activity
+Environment=PYTHONUNBUFFERED=1
+Environment=ZONGRUI_ACTIVITY_HOST=127.0.0.1
+Environment=ZONGRUI_ACTIVITY_PORT=18231
+Environment=ZONGRUI_ACTIVITY_DATA_DIR=/var/lib/zongrui-activity
+EnvironmentFile=/etc/zongrui-activity.env
+ExecStart=/usr/bin/python3.14 /opt/zongrui-activity/backend/server.py
+Restart=on-failure
+RestartSec=3s
+TimeoutStopSec=15s
+UMask=0077
+StateDirectory=zongrui-activity
+StateDirectoryMode=0700
+
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectClock=true
+ProtectControlGroups=true
+ProtectHome=true
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/zongrui-activity
+CapabilityBoundingSet=
+AmbientCapabilities=
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RemoveIPC=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictRealtime=true
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

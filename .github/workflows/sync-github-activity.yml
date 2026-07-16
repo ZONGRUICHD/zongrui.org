@@ -1,0 +1,100 @@
+name: Sync GitHub contribution wall
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-github-contribution-wall
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SYNC_TOKEN: ${{ secrets.ACTIVITY_SYNC_TOKEN }}
+      SYNC_ENDPOINT: https://api.zongrui.org/api/sync/github
+    steps:
+      - name: Query contribution calendar
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          query='query GreenWall($login: String!) {
+            user(login: $login) {
+              login
+              contributionsCollection {
+                startedAt
+                endedAt
+                contributionCalendar {
+                  totalContributions
+                  weeks {
+                    firstDay
+                    contributionDays {
+                      date
+                      weekday
+                      contributionCount
+                      contributionLevel
+                    }
+                  }
+                }
+              }
+            }
+          }'
+
+          gh api graphql -f query="$query" -F login=ZONGRUICHD > github-response.json
+
+          jq -e '
+            if (.errors // [] | length) > 0 or .data.user == null then
+              error("GitHub contribution query failed")
+            else
+              .data.user as $user
+              | $user.contributionsCollection as $collection
+              | $collection.contributionCalendar as $calendar
+              | {
+                  schemaVersion: 1,
+                  kind: "github",
+                  login: $user.login,
+                  totalContributions: $calendar.totalContributions,
+                  startedAt: $collection.startedAt,
+                  endedAt: $collection.endedAt,
+                  weeks: [
+                    $calendar.weeks[]
+                    | {
+                        firstDay,
+                        days: [
+                          .contributionDays[]
+                          | {
+                              date,
+                              weekday,
+                              count: .contributionCount,
+                              level: (
+                                if .contributionLevel == "FIRST_QUARTILE" then 1
+                                elif .contributionLevel == "SECOND_QUARTILE" then 2
+                                elif .contributionLevel == "THIRD_QUARTILE" then 3
+                                elif .contributionLevel == "FOURTH_QUARTILE" then 4
+                                else 0
+                                end
+                              )
+                            }
+                        ]
+                      }
+                  ],
+                  updatedAt: (now | todateiso8601)
+                }
+            end
+          ' github-response.json > github-wall.json
+
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header 'User-Agent: zongrui-activity-sync/1.0' \
+            --header "Authorization: Bearer ${SYNC_TOKEN}" \
+            --header 'Content-Type: application/json' \
+            --data-binary @github-wall.json \
+            "$SYNC_ENDPOINT"

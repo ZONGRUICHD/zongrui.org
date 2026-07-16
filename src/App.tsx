@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { ActivityWalls } from './components/ActivityWalls'
 import { galGames } from './data/galGames'
 
 type FeatureBandProps = {
@@ -249,10 +250,9 @@ function GalLibrary() {
   const railRef = useRef<HTMLDivElement>(null)
   const firstSetRef = useRef<HTMLDivElement>(null)
   const loopSetRef = useRef<HTMLDivElement>(null)
-  const hoverPausedRef = useRef(false)
-  const focusPausedRef = useRef(false)
-  const touchPausedRef = useRef(false)
+  const manualPausedRef = useRef(false)
   const resumeAtRef = useRef(0)
+  const [autoScrollPaused, setAutoScrollPaused] = useState(false)
 
   const pauseAutoScroll = (duration = 2400) => {
     resumeAtRef.current = performance.now() + duration
@@ -269,6 +269,13 @@ function GalLibrary() {
     })
   }
 
+  const toggleAutoScroll = () => {
+    const nextPaused = !manualPausedRef.current
+    manualPausedRef.current = nextPaused
+    setAutoScrollPaused(nextPaused)
+    if (!nextPaused) resumeAtRef.current = 0
+  }
+
   useEffect(() => {
     const rail = railRef.current
     const firstSet = firstSetRef.current
@@ -279,6 +286,7 @@ function GalLibrary() {
 
     let animationFrame = 0
     let previousTime = performance.now()
+    let virtualScroll = rail.scrollLeft
 
     const stop = () => {
       if (animationFrame) cancelAnimationFrame(animationFrame)
@@ -289,20 +297,21 @@ function GalLibrary() {
       const elapsed = Math.min(time - previousTime, 48)
       previousTime = time
 
-      const paused = hoverPausedRef.current
-        || focusPausedRef.current
-        || touchPausedRef.current
-        || time < resumeAtRef.current
+      const paused = manualPausedRef.current || time < resumeAtRef.current
 
-      if (!paused) {
+      if (paused) {
+        virtualScroll = rail.scrollLeft
+      } else {
         const loopPoint = loopSet.offsetLeft - firstSet.offsetLeft
 
         if (loopPoint > 0) {
-          rail.scrollLeft += elapsed * 0.038
+          virtualScroll += elapsed * 0.052
 
-          if (rail.scrollLeft >= loopPoint) {
-            rail.scrollLeft -= loopPoint
+          if (virtualScroll >= loopPoint) {
+            virtualScroll %= loopPoint
           }
+
+          rail.scrollLeft = virtualScroll
         }
       }
 
@@ -311,22 +320,28 @@ function GalLibrary() {
 
     const start = () => {
       if (animationFrame) return
+      virtualScroll = rail.scrollLeft
       previousTime = performance.now()
       animationFrame = requestAnimationFrame(tick)
     }
 
-    const visibilityObserver = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) start()
-        else stop()
-      },
-      { threshold: 0.05 },
-    )
+    let visibilityObserver: IntersectionObserver | null = null
 
-    visibilityObserver.observe(rail)
+    if ('IntersectionObserver' in window) {
+      visibilityObserver = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) start()
+          else stop()
+        },
+        { threshold: 0.05 },
+      )
+      visibilityObserver.observe(rail)
+    } else {
+      start()
+    }
 
     return () => {
-      visibilityObserver.disconnect()
+      visibilityObserver?.disconnect()
       stop()
     }
   }, [])
@@ -385,6 +400,16 @@ function GalLibrary() {
         <div className="gal-library__rail-toolbar" data-reveal>
           <p>{galGames.length} COVERS · AUTO LOOP</p>
           <div className="gal-library__rail-controls" aria-label="Galgame 封面滚动控制">
+            <button
+              type="button"
+              className="gal-library__pause"
+              onClick={toggleAutoScroll}
+              aria-pressed={autoScrollPaused}
+              aria-label={autoScrollPaused ? '继续自动滚动 Galgame 封面' : '暂停自动滚动 Galgame 封面'}
+              title={autoScrollPaused ? '继续自动滚动' : '暂停自动滚动'}
+            >
+              <span aria-hidden="true">{autoScrollPaused ? '▶' : 'Ⅱ'}</span>
+            </button>
             <button type="button" onClick={() => scrollLibrary(-1)} aria-label="向左滚动 Galgame 封面">
               ←
             </button>
@@ -399,22 +424,16 @@ function GalLibrary() {
           ref={railRef}
           tabIndex={0}
           aria-label="Steam GalGame 自动横向封面长廊"
-          onMouseEnter={() => { hoverPausedRef.current = true }}
-          onMouseLeave={() => { hoverPausedRef.current = false }}
-          onFocusCapture={() => { focusPausedRef.current = true }}
-          onBlurCapture={() => {
-            focusPausedRef.current = false
-            pauseAutoScroll()
+          onFocusCapture={() => pauseAutoScroll()}
+          onPointerDown={() => pauseAutoScroll(3000)}
+          onPointerUp={() => pauseAutoScroll()}
+          onPointerCancel={() => pauseAutoScroll()}
+          onPointerMove={(event) => {
+            if (event.buttons) pauseAutoScroll(1200)
           }}
-          onTouchStart={() => { touchPausedRef.current = true }}
-          onTouchEnd={() => {
-            touchPausedRef.current = false
-            pauseAutoScroll()
-          }}
-          onTouchCancel={() => {
-            touchPausedRef.current = false
-            pauseAutoScroll()
-          }}
+          onTouchStart={() => pauseAutoScroll(3000)}
+          onTouchEnd={() => pauseAutoScroll()}
+          onTouchCancel={() => pauseAutoScroll()}
           onWheel={() => pauseAutoScroll(1800)}
           onKeyDown={(event) => {
             if (event.key === 'ArrowLeft') {
@@ -513,6 +532,7 @@ function App() {
               <a href="#work" onClick={closeMenu}>技术作品</a>
               <a href="#web" onClick={closeMenu}>网页与故事</a>
               <a href="#gal" onClick={closeMenu}>Galgame 收藏</a>
+              <a href="#activity" onClick={closeMenu}>活动墙</a>
             </div>
             <div className="site-nav__links">
               <a href="#about" onClick={closeMenu}>关于</a>
@@ -624,6 +644,8 @@ function App() {
         </section>
 
         <GalLibrary />
+
+        <ActivityWalls />
 
         <section className="about" id="about" aria-labelledby="about-title">
           <div className="about__inner">
