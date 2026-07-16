@@ -3,6 +3,7 @@ const PUBLIC_SITE_ORIGIN = 'https://zongrui.org'
 const PUBLIC_CACHE_TTL_SECONDS = 300
 const INDEX_CACHE_TTL_SECONDS = 60
 const STALE_CACHE_TTL_SECONDS = 7 * 24 * 60 * 60
+const PUBLIC_HTML_CACHE_CONTROL = `public, max-age=0, s-maxage=${PUBLIC_CACHE_TTL_SECONDS}, stale-while-revalidate=${STALE_CACHE_TTL_SECONDS}, stale-if-error=${STALE_CACHE_TTL_SECONDS}`
 
 const BLOCKED_FORWARD_HEADERS = [
   'cf-access-client-id',
@@ -147,10 +148,27 @@ function rewriteLocation(response, request, origin) {
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers })
 }
 
+function stripResponseCookie(headers, cookieName) {
+  const setCookies = headers.getSetCookie()
+  if (!setCookies.length) return
+
+  const normalizedName = cookieName.toLowerCase()
+  const retained = setCookies.filter((cookie) => {
+    const separator = cookie.indexOf('=')
+    if (separator < 0) return true
+    return cookie.slice(0, separator).trim().toLowerCase() !== normalizedName
+  })
+
+  if (retained.length === setCookies.length) return
+  headers.delete('Set-Cookie')
+  for (const cookie of retained) headers.append('Set-Cookie', cookie)
+}
+
 function sanitizeOriginResponse(response) {
   const headers = new Headers(response.headers)
   headers.delete('Server')
   headers.delete('X-Powered-By')
+  stripResponseCookie(headers, 'CF_Authorization')
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -170,6 +188,12 @@ async function fetchOrigin(request, env, apiPathOverride) {
   }
 }
 
+function isParameterizedArticleList(request) {
+  if (request.method !== 'GET') return false
+  const url = new URL(request.url)
+  return url.pathname.slice(API_PREFIX.length) === '/v1/articles' && Boolean(url.search)
+}
+
 function isPublicCacheableApi(request) {
   if (request.method !== 'GET') return false
 
@@ -177,7 +201,7 @@ function isPublicCacheableApi(request) {
   const path = url.pathname.slice(API_PREFIX.length)
   if (path.includes('/comments')) return false
   if (path.includes('/admin/') || path.includes('/auth/')) return false
-  if (path === '/v1/articles' && url.search) return false
+  if (isParameterizedArticleList(request)) return false
 
   return (
     path === '/v1/articles'
@@ -186,6 +210,15 @@ function isPublicCacheableApi(request) {
     || path === '/v1/rss.xml'
     || path === '/v1/sitemap.xml'
   )
+}
+
+function responseWithNoStore(response) {
+  const headers = new Headers(response.headers)
+  headers.set('Cache-Control', 'no-store')
+  headers.delete('CDN-Cache-Control')
+  headers.delete('Cloudflare-CDN-Cache-Control')
+  headers.set('X-ZR-Edge-Cache', 'BYPASS')
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers })
 }
 
 function apiFreshnessSeconds(request) {
@@ -257,7 +290,7 @@ async function proxyArticlesApi(request, env, ctx) {
     if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
       await invalidatePublicCache(response.clone(), request, ctx)
     }
-    return response
+    return isParameterizedArticleList(request) ? responseWithNoStore(response) : response
   }
 
   const cache = caches.default
@@ -364,7 +397,7 @@ async function transformShell(request, env, options) {
   headers.delete('Content-Length')
   headers.delete('ETag')
   headers.delete('Last-Modified')
-  headers.set('Cache-Control', options.cacheControl || 'public, max-age=0, s-maxage=300')
+  headers.set('Cache-Control', options.cacheControl || PUBLIC_HTML_CACHE_CONTROL)
   headers.set(
     'Content-Security-Policy',
     `default-src 'self'; img-src 'self' data: https://media.zongrui.org; style-src 'self' 'unsafe-inline'; script-src 'self' https://challenges.cloudflare.com 'nonce-${nonce}'; font-src 'self'; connect-src 'self' https://api.zongrui.org https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'`,
