@@ -16,29 +16,6 @@ type FeatureBandProps = {
   reverse?: boolean
 }
 
-const focusAreas = [
-  {
-    index: '01',
-    title: 'Rust 与机器人',
-    description: 'STM32、RoboMaster、CAN 和各种传感器，最后都得落到实机上。',
-  },
-  {
-    index: '02',
-    title: 'Linux 与网络',
-    description: '装服务、配交换机、抓包排障，也顺手记下踩过的坑。',
-  },
-  {
-    index: '03',
-    title: 'AI 与自动化',
-    description: '把模型接进我每天用的工具里，能省一步是一步。',
-  },
-  {
-    index: '04',
-    title: '文档与网页',
-    description: '项目能跑以后，我还会补 README、操作说明和网页界面。',
-  },
-]
-
 const portals = [
   {
     index: '01',
@@ -531,9 +508,7 @@ function App() {
               <a href="#activity" onClick={closeMenu}>活动墙</a>
             </div>
             <div className="site-nav__links">
-              <a href="#about" onClick={closeMenu}>关于</a>
               <a href="#work" onClick={closeMenu}>作品</a>
-              <a href="#focus" onClick={closeMenu}>方向</a>
               <a href="#links" onClick={closeMenu}>站点</a>
             </div>
           </div>
@@ -642,42 +617,6 @@ function App() {
         <GalLibrary />
 
         <ActivityWalls />
-
-        <section className="about" id="about" aria-labelledby="about-title">
-          <div className="about__inner">
-            <div className="about__heading" data-reveal>
-              <p className="section-kicker">ABOUT</p>
-              <h2 id="about-title">ZongRui，<br />深圳。</h2>
-            </div>
-            <div className="about__body" data-reveal>
-              <p>
-                我目前还是学生，住在深圳。平时写 Rust，做 RoboMaster 控制，也折腾 Linux、交换机、服务器和各种 AI 工具。
-              </p>
-              <p>
-                很多项目没什么宏大目标：我只是正好缺一个能用的东西，于是自己写。能跑之后，再慢慢补文档和界面。
-              </p>
-              <blockquote>{'Programming in Ciallo～(∠・ω< )⌒★'}</blockquote>
-            </div>
-          </div>
-        </section>
-
-        <section className="focus" id="focus" aria-labelledby="focus-title">
-          <div className="focus__inner">
-            <div className="focus__header" data-reveal>
-              <p className="section-kicker">WHAT I AM WORKING ON</p>
-              <h2 id="focus-title">最近常折腾的<br />几件事。</h2>
-            </div>
-            <div className="focus-list">
-              {focusAreas.map((area) => (
-                <article key={area.index} data-reveal>
-                  <span>{area.index}</span>
-                  <h3>{area.title}</h3>
-                  <p>{area.description}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
 
         <section className="portals" id="links" aria-labelledby="links-title">
           <div className="portals__inner">
