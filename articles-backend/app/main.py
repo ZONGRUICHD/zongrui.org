@@ -11,7 +11,7 @@ from starlette.requests import Request
 
 from . import __version__
 from .config import get_settings
-from .media import safe_media_path
+from .media import ensure_media_backup_lock, safe_media_path
 from .routers import admin, auth, public
 
 
@@ -20,6 +20,7 @@ async def lifespan(_app: FastAPI):
     settings = get_settings()
     settings.validate_runtime_secrets()
     settings.media_dir.mkdir(parents=True, exist_ok=True, mode=0o750)
+    ensure_media_backup_lock(settings)
     yield
 
 

@@ -2,6 +2,11 @@
 set -euo pipefail
 umask 077
 
+CACHE_DIR="${ARTICLES_BACKUP_CACHE_DIR:-/var/cache/zongrui-articles-backup}"
+RESTIC_OPERATION_LOCK="${ARTICLES_RESTIC_OPERATION_LOCK:-${CACHE_DIR}/restic-operation.lock}"
+exec 9>"${RESTIC_OPERATION_LOCK}"
+flock --exclusive --wait 21600 9
+
 WORK_DIR="$(mktemp -d /var/tmp/zongrui-articles-restore.XXXXXX)"
 trap 'rm -rf "${WORK_DIR}"' EXIT
 

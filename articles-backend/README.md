@@ -222,10 +222,15 @@ Run `restic init` exactly once for a new empty repository; on later deployments,
 skip that line and verify the existing repository with `restic snapshots`.
 
 The nightly job uses SQLite's online backup API, runs `integrity_check`, backs
-up media, then retains 14 daily, 8 weekly, and 12 monthly snapshots. The monthly
-job restores the newest snapshot into a temporary directory, verifies the
-database structure and integrity, and checks every Media row against the
-restored file's SHA-256. Test the initial backup before relying on the timers.
+up media, then retains 14 daily, 8 weekly, and 12 monthly snapshots. Media
+uploads and deletions share `/var/lib/zongrui-articles/.media-backup.lock` with
+the snapshot job, so the database and content-addressed files cannot diverge
+during a backup. Backup and monthly restore-check jobs also share a restic
+operation lock and wait for one another instead of failing on an overlapping
+timer. The monthly job restores the newest snapshot into a temporary directory,
+verifies the database structure and integrity, and checks every Media row
+against the restored file's SHA-256. Test the initial backup before relying on
+the timers.
 
 ## Rollback
 

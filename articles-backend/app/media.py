@@ -4,8 +4,10 @@ import hashlib
 import io
 import os
 import tempfile
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Iterator
 
 from fastapi import HTTPException, UploadFile
 from PIL import Image, ImageOps, UnidentifiedImageError
@@ -17,6 +19,33 @@ from .models import Media
 
 
 ALLOWED_FORMATS = {"JPEG", "PNG", "WEBP"}
+
+
+def ensure_media_backup_lock(settings: Settings) -> Path:
+    lock_path = settings.media_dir.parent / ".media-backup.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True, mode=0o750)
+    lock_path.touch(mode=0o640, exist_ok=True)
+    os.chmod(lock_path, 0o640)
+    return lock_path
+
+
+@contextmanager
+def media_backup_lock(settings: Settings) -> Iterator[None]:
+    """Serialize media mutations with the database-and-media backup snapshot."""
+
+    lock_path = ensure_media_backup_lock(settings)
+    try:
+        import fcntl
+    except ImportError:  # Windows development and tests do not provide fcntl.
+        yield
+        return
+
+    with lock_path.open("rb") as lock_file:
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
 
 
 async def process_upload(file: UploadFile, db: Session, settings: Settings) -> Media:

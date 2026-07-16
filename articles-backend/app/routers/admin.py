@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from ..config import Settings, get_settings
 from ..database import get_db
-from ..media import process_upload, safe_media_path
+from ..media import media_backup_lock, process_upload, safe_media_path
 from ..models import AdminSession, Article, ArticleRevision, Comment, Media, SlugRedirect
 from ..schemas import (
     AdminArticleEnvelope,
@@ -453,10 +453,11 @@ async def upload_media(
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ) -> dict[str, object]:
-    media = await process_upload(file, db, settings)
-    audit(db, "media.upload", "media", media.id, sha256=media.sha256, size=media.size_bytes)
-    db.commit()
-    db.refresh(media)
+    with media_backup_lock(settings):
+        media = await process_upload(file, db, settings)
+        audit(db, "media.upload", "media", media.id, sha256=media.sha256, size=media.size_bytes)
+        db.commit()
+        db.refresh(media)
     return {"media": _media_out(media, settings)}
 
 
@@ -467,23 +468,24 @@ def delete_media(
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ) -> Response:
-    media = db.get(Media, media_id)
-    if media is None:
-        raise HTTPException(status_code=404, detail="media not found")
-    if db.scalar(select(func.count(Article.id)).where(Article.cover_media_id == media.id)):
-        raise HTTPException(status_code=409, detail="media is used as an article cover")
-    url = media_url(media, settings)
-    if db.scalar(select(func.count(Article.id)).where(Article.content_html.contains(url, autoescape=True))):
-        raise HTTPException(status_code=409, detail="media is used in article content")
-    path = safe_media_path(media.path, settings)
-    audit(db, "media.delete", "media", media.id, sha256=media.sha256)
-    db.delete(media)
-    db.commit()
-    try:
-        path.unlink(missing_ok=True)
-    except OSError:
-        # The DB is authoritative. A failed unlink is safe to retry during maintenance.
-        pass
+    with media_backup_lock(settings):
+        media = db.get(Media, media_id)
+        if media is None:
+            raise HTTPException(status_code=404, detail="media not found")
+        if db.scalar(select(func.count(Article.id)).where(Article.cover_media_id == media.id)):
+            raise HTTPException(status_code=409, detail="media is used as an article cover")
+        url = media_url(media, settings)
+        if db.scalar(select(func.count(Article.id)).where(Article.content_html.contains(url, autoescape=True))):
+            raise HTTPException(status_code=409, detail="media is used in article content")
+        path = safe_media_path(media.path, settings)
+        audit(db, "media.delete", "media", media.id, sha256=media.sha256)
+        db.delete(media)
+        db.commit()
+        try:
+            path.unlink(missing_ok=True)
+        except OSError:
+            # The DB is authoritative. A failed unlink is safe to retry during maintenance.
+            pass
     return Response(status_code=204)
 
 
