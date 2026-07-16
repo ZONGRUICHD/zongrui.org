@@ -4,7 +4,8 @@ import { formatArticleDate } from './pageMeta'
 import type { ArticleComment } from './types'
 
 const TURNSTILE_SCRIPT = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
-const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined
+const TURNSTILE_SITE_KEY =
+  (import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined) || '0x4AAAAAAD3Ul1lzOVbf_9Y1'
 
 function Turnstile({ onToken, resetKey }: { onToken: (token: string) => void; resetKey: number }) {
   const containerRef = useRef<HTMLDivElement>(null)
