@@ -565,7 +565,7 @@ function App() {
           <div className="section-intro" data-reveal>
             <div>
               <p className="section-kicker">WEB / MEMORY / NOTES</p>
-              <h2 id="web-title">有些东西，<br />我想留在网上。</h2>
+              <h2 id="web-title">我的网站们</h2>
             </div>
             <p>2022314 是毕业纪念站；ZongTech 用来记服务器、工具和踩坑。</p>
           </div>
