@@ -23,6 +23,7 @@ const BLOCKED_FORWARD_HEADERS = [
 ]
 
 const PAGE_SECURITY_POLICY = {
+  hsts: 'max-age=31536000',
   permissions: 'camera=(), microphone=(), geolocation=()',
   referrer: 'strict-origin-when-cross-origin',
 }
@@ -37,6 +38,7 @@ function jsonError(status, code, message) {
         'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'",
         'Permissions-Policy': PAGE_SECURITY_POLICY.permissions,
         'Referrer-Policy': PAGE_SECURITY_POLICY.referrer,
+        'Strict-Transport-Security': PAGE_SECURITY_POLICY.hsts,
         'X-Content-Type-Options': 'nosniff',
         'X-Frame-Options': 'DENY',
       },
@@ -169,6 +171,7 @@ function sanitizeOriginResponse(response) {
   headers.delete('Server')
   headers.delete('X-Powered-By')
   stripResponseCookie(headers, 'CF_Authorization')
+  headers.set('Strict-Transport-Security', PAGE_SECURITY_POLICY.hsts)
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -404,6 +407,7 @@ async function transformShell(request, env, options) {
   )
   headers.set('Permissions-Policy', PAGE_SECURITY_POLICY.permissions)
   headers.set('Referrer-Policy', PAGE_SECURITY_POLICY.referrer)
+  headers.set('Strict-Transport-Security', PAGE_SECURITY_POLICY.hsts)
   headers.set('X-Content-Type-Options', 'nosniff')
   headers.set('X-Frame-Options', 'DENY')
   if (robots.includes('noindex')) headers.set('X-Robots-Tag', robots)
@@ -602,6 +606,7 @@ async function handleSitemap(request, env, ctx) {
         'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'",
         'Permissions-Policy': PAGE_SECURITY_POLICY.permissions,
         'Referrer-Policy': PAGE_SECURITY_POLICY.referrer,
+        'Strict-Transport-Security': PAGE_SECURITY_POLICY.hsts,
         'X-Content-Type-Options': 'nosniff',
         'X-Frame-Options': 'DENY',
       },

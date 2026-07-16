@@ -100,7 +100,9 @@ def test_optional_origin_token_and_media_host_boundary(client: TestClient) -> No
         allowed = client.get("/v1/articles", headers={"X-ZR-Origin-Token": "a" * 32})
         assert allowed.status_code == 200
 
-        assert client.get("/health", headers={"Host": "media.example.test"}).status_code == 404
+        media_health = client.get("/health", headers={"Host": "media.example.test"})
+        assert media_health.status_code == 404
+        assert media_health.headers["strict-transport-security"] == "max-age=31536000"
         assert client.get("/v1/articles", headers={"Host": "media.example.test"}).status_code == 404
         media_post = client.post("/media/2026/01/missing.webp", headers={"Host": "media.example.test"})
         assert media_post.status_code == 405

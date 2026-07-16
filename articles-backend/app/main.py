@@ -14,6 +14,8 @@ from .config import get_settings
 from .media import ensure_media_backup_lock, safe_media_path
 from .routers import admin, auth, public
 
+HSTS_HEADER = "max-age=31536000"
+
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
@@ -32,12 +34,16 @@ class ResponsePolicyMiddleware(BaseHTTPMiddleware):
         media_host = urlparse(settings.media_public_base_url).hostname
         if host == media_host:
             if not path.startswith("/media/"):
-                return JSONResponse({"detail": "not found"}, status_code=404)
+                return JSONResponse(
+                    {"detail": "not found"},
+                    status_code=404,
+                    headers={"Strict-Transport-Security": HSTS_HEADER},
+                )
             if request.method not in {"GET", "HEAD"}:
                 return JSONResponse(
                     {"detail": "method not allowed"},
                     status_code=405,
-                    headers={"Allow": "GET, HEAD"},
+                    headers={"Allow": "GET, HEAD", "Strict-Transport-Security": HSTS_HEADER},
                 )
         elif settings.origin_shared_secret and path.startswith(("/api/articles/", "/v1/")):
             supplied = request.headers.get("X-ZR-Origin-Token", "")
@@ -45,6 +51,7 @@ class ResponsePolicyMiddleware(BaseHTTPMiddleware):
                 return JSONResponse({"detail": "not found"}, status_code=404)
         response = await call_next(request)
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("Strict-Transport-Security", HSTS_HEADER)
         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
         response.headers.setdefault("X-Frame-Options", "DENY")
         response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
