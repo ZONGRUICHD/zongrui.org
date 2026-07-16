@@ -1278,18 +1278,26 @@ img {
 }
 
 .gal-grid {
+  --gal-rail-gutter: clamp(1rem, 3vw, 3rem);
+
   display: flex;
   gap: 1.15rem;
-  padding: 0.45rem 0.15rem 1.35rem;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  padding: 0.45rem var(--gal-rail-gutter) 1.35rem;
   overflow-x: auto;
   overflow-y: hidden;
   scroll-behavior: auto;
-  scroll-padding-inline: 0.15rem;
-  scrollbar-color: var(--rpi-light-red) rgba(255, 255, 255, 0.13);
-  scrollbar-width: thin;
+  scroll-padding-inline: var(--gal-rail-gutter);
+  scrollbar-width: none;
   overscroll-behavior-x: contain;
   touch-action: pan-x pan-y pinch-zoom;
   -webkit-overflow-scrolling: touch;
+  -ms-overflow-style: none;
+}
+
+.gal-grid:focus-visible {
+  outline-offset: -3px;
 }
 
 .gal-grid__group {
@@ -1299,16 +1307,9 @@ img {
 }
 
 .gal-grid::-webkit-scrollbar {
-  height: 0.58rem;
-}
-
-.gal-grid::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.13);
-}
-
-.gal-grid::-webkit-scrollbar-thumb {
-  background: var(--rpi-light-red);
-  border: 2px solid var(--rpi-dark-blue);
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .gal-card {
