@@ -10,7 +10,7 @@ import { ConsoleGate } from './ConsoleLayout'
 import { EditorToolbar } from './EditorToolbar'
 import { FigureImage } from './FigureImage'
 import { formatArticleDate } from './pageMeta'
-import type { AdminArticle, ArticleDraftInput, ArticleRevision, ArticleStatus, TiptapDocument } from './types'
+import type { AdminArticle, ArticleDraftInput, ArticleRevision, ArticleStatus, ArticleWritingMode, TiptapDocument } from './types'
 
 type LocalDraft = ArticleDraftInput & { savedAt: string; sourceUpdatedAt?: string }
 type SaveState = 'idle' | 'local' | 'saving' | 'saved' | 'offline' | 'conflict'
@@ -43,6 +43,7 @@ export function ArticleEditorPage() {
   const [scheduledAt, setScheduledAt] = useState('')
   const [revision, setRevision] = useState(0)
   const [contentJson, setContentJson] = useState<TiptapDocument>(emptyDocument)
+  const [writingMode, setWritingMode] = useState<ArticleWritingMode>('horizontal')
   const [changeVersion, setChangeVersion] = useState(0)
   const [hydrated, setHydrated] = useState(!id)
   const [saveState, setSaveState] = useState<SaveState>('idle')
@@ -53,9 +54,21 @@ export function ArticleEditorPage() {
   const [preview, setPreview] = useState(false)
   const [coverUploading, setCoverUploading] = useState(false)
   const lastCheckpointRef = useRef(Date.now())
+  const changeVersionRef = useRef(0)
+  const revisionRef = useRef(revision)
+  const saveInFlightRef = useRef<Promise<AdminArticle | null> | null>(null)
+  const autosaveRetryRef = useRef<number | null>(null)
+  const pendingNavigationRef = useRef<string | null>(null)
   const saveRef = useRef<(reason: 'manual' | 'autosave') => Promise<AdminArticle | null>>(async () => null)
   const articleIdRef = useRef(articleId)
   articleIdRef.current = articleId
+  revisionRef.current = revision
+
+  const bumpChangeVersion = useCallback(() => {
+    const next = changeVersionRef.current + 1
+    changeVersionRef.current = next
+    setChangeVersion(next)
+  }, [])
 
   const editor = useEditor({
     extensions: [
@@ -69,7 +82,7 @@ export function ArticleEditorPage() {
     editorProps: { attributes: { class: 'article-editor-prose', 'aria-label': '文章正文编辑器' } },
     onUpdate: ({ editor: instance }) => {
       setContentJson(instance.getJSON() as TiptapDocument)
-      setChangeVersion((value) => value + 1)
+      bumpChangeVersion()
       setSaveState(articleIdRef.current ? 'idle' : 'local')
     },
   })
@@ -86,8 +99,11 @@ export function ArticleEditorPage() {
     setStatus(article.status)
     setScheduledAt(article.scheduledAt ? new Date(article.scheduledAt).toISOString().slice(0, 16) : '')
     setRevision(article.revision)
+    revisionRef.current = article.revision
     setContentJson(article.contentJson ?? emptyDocument)
+    setWritingMode(article.writingMode ?? 'horizontal')
     editor?.commands.setContent(article.contentJson ?? emptyDocument, { emitUpdate: false })
+    changeVersionRef.current = 0
     setChangeVersion(0)
     setHydrated(true)
     setSaveState('saved')
@@ -100,12 +116,13 @@ export function ArticleEditorPage() {
     setCoverUrl(draft.coverUrl ?? '')
     setTagsText(draft.tags.join(', '))
     setContentJson(draft.contentJson)
+    setWritingMode(draft.writingMode ?? 'horizontal')
     setRevision(draft.revision ?? revision)
     editor?.commands.setContent(draft.contentJson, { emitUpdate: false })
     setRecoverable(null)
-    setChangeVersion((value) => value + 1)
+    bumpChangeVersion()
     setSaveState('local')
-  }, [editor, revision])
+  }, [bumpChangeVersion, editor, revision])
 
   useEffect(() => {
     if (!editor) return
@@ -131,7 +148,7 @@ export function ArticleEditorPage() {
   }, [applyArticle, editor, id])
 
   const markChanged = () => {
-    setChangeVersion((value) => value + 1)
+    bumpChangeVersion()
     setSaveState(articleId ? 'idle' : 'local')
   }
 
@@ -142,10 +159,11 @@ export function ArticleEditorPage() {
     coverUrl: coverUrl.trim() || null,
     tags,
     contentJson,
-    revision: articleId ? revision : undefined,
+    writingMode,
+    revision: articleIdRef.current ? revisionRef.current : undefined,
     reason,
     checkpoint,
-  }), [articleId, contentJson, coverUrl, revision, slug, summary, tags, title])
+  }), [contentJson, coverUrl, slug, summary, tags, title, writingMode])
 
   useEffect(() => {
     if (!hydrated || changeVersion === 0) return
@@ -157,44 +175,93 @@ export function ArticleEditorPage() {
     return () => window.clearTimeout(timer)
   }, [articleId, changeVersion, hydrated, snapshot])
 
-  const persist = useCallback(async (reason: 'manual' | 'autosave') => {
+  const persist = useCallback(async (reason: 'manual' | 'autosave'): Promise<AdminArticle | null> => {
+    const activeSave = saveInFlightRef.current
+    if (activeSave) {
+      const saved = await activeSave
+      if (saved && reason === 'manual' && changeVersionRef.current > 0) return saveRef.current('manual')
+      return saved
+    }
+
     if (!title.trim() || !slug.trim()) {
       if (reason === 'manual') setNotice('标题和 slug 不能为空。')
       return null
     }
-    setSaveState('saving')
-    setNotice('')
+
+    const submittedVersion = changeVersionRef.current
+    const submittedArticleId = articleIdRef.current
     const checkpoint = reason === 'autosave' && Date.now() - lastCheckpointRef.current >= 5 * 60 * 1000
-    try {
-      const response = articleId
-        ? await articleApi.update(articleId, snapshot(reason, checkpoint))
-        : await articleApi.create(snapshot(reason))
-      const saved = response.article
-      setRevision(saved.revision)
-      setStatus(saved.status)
-      setArticleId(saved.id)
-      setSaveState('saved')
-      setChangeVersion(0)
-      localStorage.removeItem(localKey(articleId))
-      if (checkpoint) lastCheckpointRef.current = Date.now()
-      if (!articleId) navigate(`/articles/console/edit/${saved.id}`, { replace: true })
-      if (reason === 'manual') {
-        setNotice('已保存。')
-        const history = await articleApi.revisions(saved.id)
-        setRevisions(history.items)
+    const payload = snapshot(reason, checkpoint)
+    let savedWithNewerChanges = false
+
+    const operation = (async () => {
+      setSaveState('saving')
+      setNotice('')
+      try {
+        const response = submittedArticleId
+          ? await articleApi.update(submittedArticleId, payload)
+          : await articleApi.create(payload)
+        const saved = response.article
+        revisionRef.current = saved.revision
+        articleIdRef.current = saved.id
+        setRevision(saved.revision)
+        setStatus(saved.status)
+        setArticleId(saved.id)
+
+        const isCurrent = changeVersionRef.current === submittedVersion
+        savedWithNewerChanges = !isCurrent
+        if (isCurrent) {
+          changeVersionRef.current = 0
+          setChangeVersion(0)
+          setSaveState('saved')
+          localStorage.removeItem(localKey(submittedArticleId))
+          localStorage.removeItem(localKey(saved.id))
+        } else {
+          setSaveState('local')
+        }
+
+        if (checkpoint) lastCheckpointRef.current = Date.now()
+        if (!submittedArticleId) pendingNavigationRef.current = saved.id
+        if (isCurrent && pendingNavigationRef.current) {
+          const destination = pendingNavigationRef.current
+          pendingNavigationRef.current = null
+          navigate(`/articles/console/edit/${destination}`, { replace: true })
+        }
+        if (reason === 'manual' && isCurrent) {
+          setNotice('已保存。')
+          void articleApi.revisions(saved.id).then((history) => setRevisions(history.items)).catch(() => {
+            setNotice('文章已保存，但修订列表暂时无法刷新。')
+          })
+        }
+        return saved
+      } catch (caught) {
+        if (caught instanceof ApiError && caught.status === 409) {
+          setSaveState('conflict')
+          setNotice('服务器上有更新的版本。本地草稿已保留，请刷新后合并。')
+        } else {
+          setSaveState('offline')
+          setNotice('无法连接服务器，内容已保存在这台设备上。')
+        }
+        return null
       }
-      return saved
-    } catch (caught) {
-      if (caught instanceof ApiError && caught.status === 409) {
-        setSaveState('conflict')
-        setNotice('服务器上有更新的版本。本地草稿已保留，请刷新后合并。')
-      } else {
-        setSaveState('offline')
-        setNotice('无法连接服务器，内容已保存在这台设备上。')
+    })()
+
+    let tracked: Promise<AdminArticle | null>
+    tracked = operation.finally(() => {
+      if (saveInFlightRef.current === tracked) saveInFlightRef.current = null
+      if (savedWithNewerChanges && articleIdRef.current) {
+        if (autosaveRetryRef.current !== null) window.clearTimeout(autosaveRetryRef.current)
+        autosaveRetryRef.current = window.setTimeout(() => {
+          autosaveRetryRef.current = null
+          if (changeVersionRef.current > 0) void saveRef.current('autosave')
+        }, 3000)
       }
-      return null
-    }
-  }, [articleId, navigate, slug, snapshot, title])
+    })
+    saveInFlightRef.current = tracked
+    const saved = await tracked
+    if (saved && reason === 'manual' && changeVersionRef.current > 0) return saveRef.current('manual')
+    return saved
+  }, [navigate, slug, snapshot, title])
 
   saveRef.current = persist
 
@@ -206,7 +273,7 @@ export function ArticleEditorPage() {
 
   useEffect(() => {
     const syncWhenOnline = () => {
-      if (changeVersion > 0 && articleIdRef.current) {
+      if (changeVersionRef.current > 0 && articleIdRef.current) {
         setNotice('网络已恢复，正在同步本地草稿…')
         void saveRef.current('autosave')
       }
@@ -215,10 +282,16 @@ export function ArticleEditorPage() {
     return () => window.removeEventListener('online', syncWhenOnline)
   }, [changeVersion])
 
+  useEffect(() => () => {
+    if (autosaveRetryRef.current !== null) window.clearTimeout(autosaveRetryRef.current)
+  }, [])
+
   const transition = async (action: 'publish' | 'unpublish' | 'archive') => {
-    const saved = changeVersion > 0 ? await persist('manual') : null
-    const activeId = saved?.id ?? articleId
-    const activeRevision = saved?.revision ?? revision
+    const needsSave = changeVersionRef.current > 0 || saveInFlightRef.current !== null
+    const saved = needsSave ? await persist('manual') : null
+    if (needsSave && !saved) return
+    const activeId = saved?.id ?? articleIdRef.current
+    const activeRevision = saved?.revision ?? revisionRef.current
     if (!activeId) return
     try {
       const response = await articleApi.transition(activeId, action, activeRevision)
@@ -231,9 +304,11 @@ export function ArticleEditorPage() {
 
   const schedule = async () => {
     if (!scheduledAt) return setNotice('请先选择发布时间。')
-    const saved = changeVersion > 0 ? await persist('manual') : null
-    const activeId = saved?.id ?? articleId
-    const activeRevision = saved?.revision ?? revision
+    const needsSave = changeVersionRef.current > 0 || saveInFlightRef.current !== null
+    const saved = needsSave ? await persist('manual') : null
+    if (needsSave && !saved) return
+    const activeId = saved?.id ?? articleIdRef.current
+    const activeRevision = saved?.revision ?? revisionRef.current
     if (!activeId) return
     try {
       const response = await articleApi.schedule(activeId, activeRevision, new Date(scheduledAt).toISOString())
@@ -285,7 +360,7 @@ export function ArticleEditorPage() {
 
         {!hydrated ? <div className="editor-loading">正在打开文章…</div> : (
           <div className={`editor-workspace${preview ? ' is-preview' : ''}`}>
-            <section className="editor-document">
+            <section className={`editor-document${preview && writingMode === 'vertical-rl' ? ' editor-document--vertical' : ''}`}>
               <div className="editor-meta-fields">
                 <label><span>文章标题</span><textarea value={title} rows={2} maxLength={160} placeholder="输入标题" onChange={(event) => { setTitle(event.target.value); markChanged() }} /></label>
                 <label><span>摘要</span><textarea value={summary} rows={3} maxLength={320} placeholder="一段准确的文章摘要" onChange={(event) => { setSummary(event.target.value); markChanged() }} /></label>
@@ -301,7 +376,25 @@ export function ArticleEditorPage() {
                 {status !== 'archived' && <button type="button" onClick={() => void transition('archive')}>归档</button>}
                 <label><span>定时发布</span><input type="datetime-local" value={scheduledAt} onChange={(event) => setScheduledAt(event.target.value)} /></label><button type="button" disabled={!scheduledAt} onClick={() => void schedule()}>设置时间</button>
               </section>
-              <section><p className="articles-kicker">SETTINGS</p><label><span>Slug</span><input value={slug} required pattern="[a-z0-9-]+" placeholder="about-me" onChange={(event) => { setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-')); markChanged() }} /></label><label><span>标签（逗号分隔）</span><input value={tagsText} onChange={(event) => { setTagsText(event.target.value); markChanged() }} /></label><label><span>题图 URL</span><input type="url" value={coverUrl} placeholder="https://media.zongrui.org/…" onChange={(event) => { setCoverUrl(event.target.value); markChanged() }} /></label><label><span>上传题图</span><input type="file" accept="image/jpeg,image/png,image/webp" disabled={coverUploading} onChange={(event) => void uploadCover(event.target.files?.[0])} /></label>{coverUrl && <img className="editor-cover-preview" src={coverUrl} alt="当前题图预览" />}</section>
+              <section>
+                <p className="articles-kicker">SETTINGS</p>
+                <fieldset className="editor-layout-picker">
+                  <legend>阅读排版</legend>
+                  <label>
+                    <input type="radio" name="writing-mode" value="horizontal" checked={writingMode === 'horizontal'} onChange={() => { setWritingMode('horizontal'); markChanged() }} />
+                    <span><strong>大陆横排</strong><small>从左至右，适合简体中文与技术文章</small></span>
+                  </label>
+                  <label>
+                    <input type="radio" name="writing-mode" value="vertical-rl" checked={writingMode === 'vertical-rl'} onChange={() => { setWritingMode('vertical-rl'); markChanged() }} />
+                    <span><strong>繁中直排</strong><small>从上至下、栏从右至左；不会自动转换文字</small></span>
+                  </label>
+                </fieldset>
+                <label><span>Slug</span><input value={slug} required pattern="[a-z0-9-]+" placeholder="about-me" onChange={(event) => { setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-')); markChanged() }} /></label>
+                <label><span>标签（逗号分隔）</span><input value={tagsText} onChange={(event) => { setTagsText(event.target.value); markChanged() }} /></label>
+                <label><span>题图 URL</span><input type="url" value={coverUrl} placeholder="https://media.zongrui.org/…" onChange={(event) => { setCoverUrl(event.target.value); markChanged() }} /></label>
+                <label><span>上传题图</span><input type="file" accept="image/jpeg,image/png,image/webp" disabled={coverUploading} onChange={(event) => void uploadCover(event.target.files?.[0])} /></label>
+                {coverUrl && <img className="editor-cover-preview" src={coverUrl} alt="当前题图预览" />}
+              </section>
               {articleId && status === 'published' && <a href={`/articles/${slug}`} target="_blank" rel="noreferrer">打开已发布文章 ↗</a>}
             </aside>
           </div>

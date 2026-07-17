@@ -140,6 +140,7 @@ def create_article(
         content_json=json.dumps(rendered.document, ensure_ascii=False, separators=(",", ":")),
         content_html=rendered.html,
         content_text=rendered.text,
+        writing_mode=payload.writingMode,
         reading_minutes=rendered.reading_minutes,
         revision=1,
         tags=resolve_tags(db, payload.tags),
@@ -191,6 +192,8 @@ def update_article(
         article.reading_minutes = rendered.reading_minutes
     if "tags" in changed_fields and payload.tags is not None:
         article.tags = resolve_tags(db, payload.tags)
+    if "writingMode" in changed_fields and payload.writingMode is not None:
+        article.writing_mode = payload.writingMode
     if payload.clearCover:
         article.cover_media_id = None
     elif "coverMediaId" in changed_fields and "coverUrl" in changed_fields and payload.coverMediaId and payload.coverUrl:
@@ -396,6 +399,7 @@ def restore_revision(
     restored_cover_id = snapshot.get("coverMediaId")
     article.cover_media_id = restored_cover_id if restored_cover_id and db.get(Media, restored_cover_id) else None
     article.tags = resolve_tags(db, snapshot.get("tags", []))
+    article.writing_mode = snapshot.get("writingMode", "horizontal")
     rendered = render_content(snapshot["contentJson"], settings)
     article.content_json = json.dumps(rendered.document, ensure_ascii=False, separators=(",", ":"))
     article.content_html = rendered.html

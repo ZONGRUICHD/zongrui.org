@@ -50,8 +50,11 @@ ALLOWED_TAGS = {
 }
 ALLOWED_ATTRIBUTES = {
     "a": ["href", "title", "rel", "target"],
+    "figure": ["data-align", "data-width"],
     "img": ["src", "alt", "title", "width", "height", "loading", "decoding"],
 }
+IMAGE_ALIGNS = {"start", "center", "end"}
+IMAGE_WIDTHS = {33, 50, 75, 100}
 
 
 class ContentValidationError(ValueError):
@@ -136,6 +139,14 @@ def validate_document(document: dict[str, Any], media_public_base_url: str) -> d
                     if not isinstance(value, str) or len(value) > 500:
                         raise ContentValidationError(f"image {key} is invalid")
                     image_attrs[key] = value
+            align = attrs.get("align", "center")
+            if not isinstance(align, str) or align not in IMAGE_ALIGNS:
+                raise ContentValidationError("image align is invalid")
+            width = attrs.get("width", 100)
+            if not isinstance(width, int) or isinstance(width, bool) or width not in IMAGE_WIDTHS:
+                raise ContentValidationError("image width is invalid")
+            image_attrs["align"] = align
+            image_attrs["width"] = width
             clean["attrs"] = image_attrs
         elif attrs:
             raise ContentValidationError(f"attrs are not supported on {node_type}")
@@ -241,10 +252,13 @@ def _render_node(node: dict[str, Any]) -> str:
         title = html.escape(attrs.get("title", ""), quote=True)
         title_attr = f' title="{title}"' if title else ""
         caption = attrs.get("caption", "")
+        align = attrs.get("align", "center")
+        width = attrs.get("width", 100)
         rendered = f'<img src="{src}" alt="{alt}"{title_attr} loading="lazy" decoding="async">'
+        figure_start = f'<figure data-align="{align}" data-width="{width}">'
         if caption:
-            return f"<figure>{rendered}<figcaption>{html.escape(caption)}</figcaption></figure>"
-        return f"<figure>{rendered}</figure>"
+            return f"{figure_start}{rendered}<figcaption>{html.escape(caption)}</figcaption></figure>"
+        return f"{figure_start}{rendered}</figure>"
     raise AssertionError(f"unhandled node type {node_type}")
 
 

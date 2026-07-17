@@ -357,9 +357,12 @@ async function transformShell(request, env, options) {
   const canonical = options.canonical
   const image = options.image || 'https://zongrui.org/og-image.png'
   const robots = options.robots || 'index, follow'
+  const lang = options.lang || 'zh-CN'
+  const ogLocale = options.ogLocale || 'zh_CN'
   const nonce = crypto.randomUUID().replaceAll('-', '')
 
   let rewriter = new HTMLRewriter()
+    .on('html', attributeSetter('lang', lang))
     .on('title', textSetter(title))
     .on('meta[name="description"]', attributeSetter('content', description))
     .on('meta[name="robots"]', attributeSetter('content', robots))
@@ -367,6 +370,7 @@ async function transformShell(request, env, options) {
     .on('meta[property="og:title"]', attributeSetter('content', title))
     .on('meta[property="og:description"]', attributeSetter('content', description))
     .on('meta[property="og:url"]', attributeSetter('content', canonical))
+    .on('meta[property="og:locale"]', attributeSetter('content', ogLocale))
     .on('meta[property="og:image"]', attributeSetter('content', image))
     .on('meta[name="twitter:title"]', attributeSetter('content', title))
     .on('meta[name="twitter:description"]', attributeSetter('content', description))
@@ -426,18 +430,23 @@ function articleServerMarkup(article) {
   const content = articleField(article, 'contentHtml', 'content_html')
   const publishedAt = articleField(article, 'publishedAt', 'published_at')
   const readingMinutes = articleField(article, 'readingMinutes', 'reading_minutes')
+  const writingMode = articleField(article, 'writingMode', 'writing_mode', 'horizontal')
+  const vertical = writingMode === 'vertical-rl'
 
   return `
     <main class="articles-ssr" id="main-content" data-articles-ssr>
-      <article class="article-reader article-reader--ssr">
-        <header class="article-reader__header">
-          <p class="section-kicker">ZONGRUI / ARTICLES</p>
+      <header class="article-header">
+        <div class="article-header__inner">
+          <a class="article-back" href="/articles">← 所有文章</a>
+          <p class="articles-kicker">ZONGRUI / ARTICLES</p>
           <h1>${title}</h1>
-          ${summary ? `<p class="article-reader__summary">${summary}</p>` : ''}
-          <p class="article-reader__meta">${publishedAt ? escapeHtml(publishedAt) : ''}${readingMinutes ? ` · ${escapeHtml(readingMinutes)} MIN` : ''}</p>
-        </header>
-        <div class="article-body">${content}</div>
-      </article>
+          ${summary ? `<p class="article-deck">${summary}</p>` : ''}
+          <div class="article-byline"><span>ZongRui</span>${readingMinutes ? `<span>${escapeHtml(readingMinutes)} MIN READ</span>` : ''}${publishedAt ? `<time>${escapeHtml(publishedAt)}</time>` : ''}${vertical ? '<span>繁中直排 · 右至左</span>' : ''}</div>
+        </div>
+      </header>
+      <div class="article-layout${vertical ? ' article-layout--vertical' : ''}">
+        <article class="article-prose${vertical ? ' article-prose--vertical' : ''}" lang="${vertical ? 'zh-Hant' : 'zh-CN'}">${content}</article>
+      </div>
     </main>`
 }
 
@@ -553,6 +562,8 @@ async function handleArticlePage(request, env, ctx) {
   const canonical = `${PUBLIC_SITE_ORIGIN}/articles/${encodeURIComponent(slug)}`
   const publishedAt = articleField(article, 'publishedAt', 'published_at')
   const updatedAt = articleField(article, 'updatedAt', 'updated_at', publishedAt)
+  const writingMode = articleField(article, 'writingMode', 'writing_mode', 'horizontal')
+  const articleLanguage = writingMode === 'vertical-rl' ? 'zh-Hant' : 'zh-CN'
 
   return transformShell(request, env, {
     title: `${title} — ZongRui`,
@@ -560,6 +571,8 @@ async function handleArticlePage(request, env, ctx) {
     canonical,
     image: cover,
     ogType: 'article',
+    lang: articleLanguage,
+    ogLocale: writingMode === 'vertical-rl' ? 'zh_TW' : 'zh_CN',
     rootHtml: articleServerMarkup(article),
     bootstrap: payload,
     jsonLd: {
@@ -572,6 +585,7 @@ async function handleArticlePage(request, env, ctx) {
       dateModified: updatedAt || undefined,
       author: { '@type': 'Person', name: 'ZongRui', url: 'https://zongrui.org/' },
       mainEntityOfPage: canonical,
+      inLanguage: articleLanguage,
     },
   })
 }

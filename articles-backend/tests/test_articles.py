@@ -102,6 +102,45 @@ def test_published_slug_change_keeps_redirect(admin_client: TestClient, document
     assert internal_redirect.headers["location"] == "/v1/articles/new-slug"
 
 
+def test_writing_mode_is_versioned_and_public(admin_client: TestClient, document: dict[str, object]) -> None:
+    article = create_article(admin_client, document, "writing-mode")
+    assert article["writingMode"] == "horizontal"
+
+    vertical = admin_client.patch(
+        f"/api/articles/v1/admin/articles/{article['id']}",
+        json={"revision": 1, "writingMode": "vertical-rl"},
+    ).json()["article"]
+    assert vertical["writingMode"] == "vertical-rl"
+
+    horizontal = admin_client.patch(
+        f"/api/articles/v1/admin/articles/{article['id']}",
+        json={"revision": vertical["revision"], "writingMode": "horizontal"},
+    ).json()["article"]
+    restored = admin_client.post(
+        f"/api/articles/v1/admin/articles/{article['id']}/revisions/2/restore",
+        json={"revision": horizontal["revision"]},
+    ).json()["article"]
+    assert restored["writingMode"] == "vertical-rl"
+
+    published = admin_client.post(
+        f"/api/articles/v1/admin/articles/{article['id']}/publish",
+        json={"revision": restored["revision"]},
+    ).json()["article"]
+    detail = admin_client.get(f"/api/articles/v1/articles/{published['slug']}").json()["article"]
+    assert detail["writingMode"] == "vertical-rl"
+
+    invalid = admin_client.post(
+        "/api/articles/v1/admin/articles",
+        json={
+            "title": "invalid mode",
+            "slug": "invalid-mode",
+            "writingMode": "sideways",
+            "contentJson": document,
+        },
+    )
+    assert invalid.status_code == 422
+
+
 def test_h1_and_untrusted_image_are_rejected(admin_client: TestClient) -> None:
     bad_heading = {
         "type": "doc",

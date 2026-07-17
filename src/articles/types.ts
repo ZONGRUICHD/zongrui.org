@@ -1,4 +1,5 @@
 export type ArticleStatus = 'draft' | 'scheduled' | 'published' | 'archived'
+export type ArticleWritingMode = 'horizontal' | 'vertical-rl'
 
 export type Tag = {
   name: string
@@ -16,6 +17,7 @@ export type PublicArticleSummary = {
   readingMinutes: number
   publishedAt: string | null
   updatedAt: string
+  writingMode: ArticleWritingMode
 }
 
 export type PublicArticle = PublicArticleSummary & {
@@ -36,6 +38,7 @@ export type AdminArticleSummary = PublicArticleSummary & {
 
 export type AdminArticle = AdminArticleSummary & {
   contentJson: TiptapDocument
+  writingMode: ArticleWritingMode
   contentHtml?: string
 }
 
@@ -96,6 +99,7 @@ export type ArticleDraftInput = {
   coverUrl: string | null
   tags: string[]
   contentJson: TiptapDocument
+  writingMode: ArticleWritingMode
   revision?: number
   checkpoint?: boolean
   reason?: 'manual' | 'autosave'

@@ -9,7 +9,7 @@ export function ConsoleGate({ children }: { children: ReactNode }) {
   const [error, setError] = useState('')
   const location = useLocation()
 
-  usePageMeta({ title: 'Articles Console — ZongRui', noIndex: true })
+  usePageMeta({ title: 'Articles Console — ZongRui', noIndex: true, language: 'zh-CN', ogLocale: 'zh_CN' })
 
   useEffect(() => {
     let active = true
