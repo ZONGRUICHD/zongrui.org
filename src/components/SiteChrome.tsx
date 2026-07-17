@@ -72,6 +72,7 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
             <Link className={articleActive ? 'is-active' : undefined} to="/articles" aria-current={articleActive ? 'page' : undefined}>
               文章
             </Link>
+            <a href="/#contact">联系方式</a>
           </div>
           <div className="site-nav__links">
             <a href="/#work">作品</a>
@@ -97,6 +98,8 @@ export function SiteFooter() {
           <a href="https://github.com/zongruichd" target="_blank" rel="noreferrer">GitHub</a>
           <a href="https://zongtech.xyz" target="_blank" rel="noreferrer">ZongTech</a>
           <a href="https://2022314.xyz" target="_blank" rel="noreferrer">2022314</a>
+          <a href="https://t.me/zongruichd" target="_blank" rel="noreferrer">Telegram</a>
+          <a href="https://x.com/zongruichd" target="_blank" rel="noreferrer">X</a>
         </div>
         <div className="footer-meta">
           <span>© {new Date().getFullYear()} ZongRui</span>

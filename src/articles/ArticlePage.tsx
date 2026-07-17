@@ -8,6 +8,17 @@ import type { PublicArticle } from './types'
 
 type Heading = { id: string; text: string; level: number }
 
+function readBootstrappedArticle(slug: string) {
+  const element = document.getElementById('__ZR_ARTICLE_DATA__')
+  if (!element?.textContent) return null
+  try {
+    const payload = JSON.parse(element.textContent) as { article?: PublicArticle }
+    return payload.article?.slug === slug ? payload.article : null
+  } catch {
+    return null
+  }
+}
+
 function prepareArticleHtml(source: string) {
   const documentFragment = new DOMParser().parseFromString(source, 'text/html')
   const headings: Heading[] = []
@@ -21,13 +32,18 @@ function prepareArticleHtml(source: string) {
 
 export function ArticlePage() {
   const { slug = '' } = useParams()
-  const [article, setArticle] = useState<PublicArticle | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [article, setArticle] = useState<PublicArticle | null>(() => readBootstrappedArticle(slug))
+  const [loading, setLoading] = useState(() => article === null)
   const [notFound, setNotFound] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (article?.slug === slug) {
+      setLoading(false)
+      return
+    }
     let active = true
+    setArticle(null)
     setLoading(true)
     setNotFound(false)
     setError('')
@@ -44,6 +60,7 @@ export function ArticlePage() {
   }, [slug])
 
   const prepared = useMemo(() => article ? prepareArticleHtml(article.contentHtml) : { html: '', headings: [] }, [article])
+  const writingMode = article ? (article.writingMode ?? 'horizontal') : undefined
   const jsonLd = useMemo(() => article ? {
     '@context': 'https://schema.org',
     '@type': 'Article',
@@ -54,6 +71,7 @@ export function ArticlePage() {
     image: article.coverUrl || undefined,
     author: { '@type': 'Person', name: 'ZongRui', url: 'https://zongrui.org' },
     mainEntityOfPage: `https://zongrui.org/articles/${article.slug}`,
+    inLanguage: (article.writingMode ?? 'horizontal') === 'vertical-rl' ? 'zh-Hant' : 'zh-CN',
   } : undefined, [article])
 
   usePageMeta({
@@ -63,6 +81,8 @@ export function ArticlePage() {
     image: article?.coverUrl,
     noIndex: notFound,
     jsonLd,
+    language: article ? (writingMode === 'vertical-rl' ? 'zh-Hant' : 'zh-CN') : undefined,
+    ogLocale: article ? (writingMode === 'vertical-rl' ? 'zh_TW' : 'zh_CN') : undefined,
   })
 
   return (
@@ -86,7 +106,7 @@ export function ArticlePage() {
         )}
         {!loading && article && (
           <>
-            <header className="article-header" id="top">
+            <header className={`article-header${writingMode === 'vertical-rl' ? ' article-header--vertical' : ''}`} id="top">
               <div className="article-header__inner">
                 <Link className="article-back" to="/articles">← 所有文章</Link>
                 <p className="articles-kicker">ARTICLE / {formatArticleDate(article.publishedAt)}</p>
@@ -96,19 +116,24 @@ export function ArticlePage() {
                   <span>ZongRui</span>
                   <span>{article.readingMinutes} MIN READ</span>
                   <time dateTime={article.updatedAt}>更新于 {formatArticleDate(article.updatedAt)}</time>
+                  {writingMode === 'vertical-rl' && <span>繁中直排 · 右至左</span>}
                 </div>
                 <div className="article-row__tags">{article.tags.map((tag) => <Link to={`/articles?tag=${encodeURIComponent(tag)}`} key={tag}>{tag}</Link>)}</div>
               </div>
               {article.coverUrl && <img className="article-cover" src={article.coverUrl} alt="" />}
             </header>
-            <div className="article-layout">
-              {prepared.headings.length > 0 && (
+            <div className={`article-layout${writingMode === 'vertical-rl' ? ' article-layout--vertical' : ''}`}>
+              {writingMode === 'horizontal' && prepared.headings.length > 0 && (
                 <aside className="article-toc" aria-label="文章目录">
                   <p>ON THIS PAGE</p>
                   <ol>{prepared.headings.map((heading) => <li className={`is-level-${heading.level}`} key={heading.id}><a href={`#${heading.id}`}>{heading.text}</a></li>)}</ol>
                 </aside>
               )}
-              <article className="article-prose" dangerouslySetInnerHTML={{ __html: prepared.html }} />
+              <article
+                className={`article-prose${writingMode === 'vertical-rl' ? ' article-prose--vertical' : ''}`}
+                lang={writingMode === 'vertical-rl' ? 'zh-Hant' : 'zh-CN'}
+                dangerouslySetInnerHTML={{ __html: prepared.html }}
+              />
             </div>
             <div className="article-comments-wrap"><Comments slug={article.slug} /></div>
           </>

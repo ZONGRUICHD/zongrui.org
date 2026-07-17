@@ -96,7 +96,17 @@ def test_media_is_reencoded_and_svg_is_rejected(admin_client: TestClient, docume
         "type": "doc",
         "content": [
             *document["content"],  # type: ignore[index]
-            {"type": "figureImage", "attrs": {"src": media["url"], "alt": "蓝色图片", "caption": "图片说明"}},
+            {
+                "type": "figureImage",
+                "attrs": {
+                    "src": media["url"],
+                    "alt": "蓝色图片",
+                    "caption": "图片说明",
+                    "align": "end",
+                    "width": 50,
+                },
+            },
+            {"type": "figureImage", "attrs": {"src": media["url"], "alt": "旧格式图片"}},
         ],
     }
     article = admin_client.post(
@@ -112,7 +122,30 @@ def test_media_is_reencoded_and_svg_is_rejected(admin_client: TestClient, docume
     )
     assert article.status_code == 201, article.text
     assert article.json()["article"]["coverUrl"] == media["url"]
+    assert '<figure data-align="end" data-width="50">' in article.json()["article"]["contentHtml"]
+    assert '<figure data-align="center" data-width="100">' in article.json()["article"]["contentHtml"]
     assert "<figcaption>图片说明</figcaption>" in article.json()["article"]["contentHtml"]
+    stored_figure = article.json()["article"]["contentJson"]["content"][-2]
+    assert stored_figure["attrs"]["align"] == "end"
+    assert stored_figure["attrs"]["width"] == 50
+    legacy_figure = article.json()["article"]["contentJson"]["content"][-1]
+    assert legacy_figure["attrs"]["align"] == "center"
+    assert legacy_figure["attrs"]["width"] == 100
+
+    listed = admin_client.get("/api/articles/v1/admin/media")
+    assert listed.status_code == 200
+    assert any(item["id"] == media["id"] for item in listed.json()["items"])
+
+    for invalid_attrs in ({"align": "sideways", "width": 50}, {"align": "center", "width": 42}):
+        invalid_document = {
+            "type": "doc",
+            "content": [{"type": "figureImage", "attrs": {"src": media["url"], **invalid_attrs}}],
+        }
+        invalid = admin_client.post(
+            "/api/articles/v1/admin/articles",
+            json={"title": "无效图片排版", "slug": "invalid-image-layout", "contentJson": invalid_document},
+        )
+        assert invalid.status_code == 422
 
     svg = admin_client.post(
         "/api/articles/v1/admin/media",

@@ -143,6 +143,58 @@ function DashboardVisual() {
   )
 }
 
+function ContactSection() {
+  const contacts = [
+    {
+      label: 'Telegram',
+      handle: '@zongruichd',
+      href: 'https://t.me/zongruichd',
+      mark: 'TG',
+      note: '发消息给我',
+    },
+    {
+      label: 'X',
+      handle: '@zongruichd',
+      href: 'https://x.com/zongruichd',
+      mark: 'X',
+      note: '看看我最近在说什么',
+    },
+  ]
+
+  return (
+    <section className="contact-section" id="contact" aria-labelledby="contact-title">
+      <div className="contact-section__inner">
+        <div className="contact-section__intro" data-reveal>
+          <p className="section-kicker">CONTACT / ELSEWHERE</p>
+          <h2 id="contact-title">找到我。</h2>
+          <p>Telegram 和 X 都用同一个用户名。</p>
+        </div>
+        <div className="contact-grid" aria-label="联系方式">
+          {contacts.map((contact, index) => (
+            <a
+              className="contact-card"
+              href={contact.href}
+              target="_blank"
+              rel="noreferrer"
+              key={contact.label}
+              data-reveal
+            >
+              <span className="contact-card__index">0{index + 1}</span>
+              <span className="contact-card__mark" aria-hidden="true">{contact.mark}</span>
+              <span className="contact-card__copy">
+                <small>{contact.label}</small>
+                <strong>{contact.handle}</strong>
+                <span>{contact.note}</span>
+              </span>
+              <Arrow />
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function FeatureBand({
   eyebrow,
   title,
@@ -305,6 +357,7 @@ function App() {
         </section>
 
         <ActivityWalls />
+        <ContactSection />
       </main>
     </SitePage>
   )

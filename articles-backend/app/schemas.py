@@ -23,6 +23,7 @@ class ArticleSummaryOut(ApiModel):
     summary: str
     coverUrl: str | None = None
     tags: list[str]
+    writingMode: Literal["horizontal", "vertical-rl"]
     readingMinutes: int
     publishedAt: datetime | None
     updatedAt: datetime
@@ -47,6 +48,7 @@ class ArticleWrite(ApiModel):
     coverMediaId: str | None = None
     coverUrl: str | None = Field(default=None, max_length=500)
     tags: list[str] = Field(default_factory=list, max_length=12)
+    writingMode: Literal["horizontal", "vertical-rl"] = "horizontal"
     contentJson: dict[str, Any]
     reason: Literal["manual", "autosave"] = "manual"
     checkpoint: bool = False
@@ -81,6 +83,7 @@ class ArticlePatch(ApiModel):
     coverUrl: str | None = Field(default=None, max_length=500)
     clearCover: bool = False
     tags: list[str] | None = Field(default=None, max_length=12)
+    writingMode: Literal["horizontal", "vertical-rl"] | None = None
     contentJson: dict[str, Any] | None = None
     reason: Literal["manual", "autosave"] = "manual"
     checkpoint: bool = False

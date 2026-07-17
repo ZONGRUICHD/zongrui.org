@@ -22,6 +22,8 @@ export function ArticleIndexPage() {
     title: '文章 — ZongRui',
     description: 'ZongRui 的个人介绍、技术记录和项目文章。',
     canonical: 'https://zongrui.org/articles',
+    language: 'zh-CN',
+    ogLocale: 'zh_CN',
   })
 
   useEffect(() => setSearch(query), [query])

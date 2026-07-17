@@ -165,6 +165,15 @@ export const articleApi = {
     return request<{ media: MediaItem }>('/admin/media', { method: 'POST', body })
   },
 
+  listMedia(cursor?: string, limit = 30) {
+    const path = appendParams('/admin/media', { cursor, limit })
+    return request<CursorPage<MediaItem>>(path.slice(API_BASE.length))
+  },
+
+  deleteMedia(id: string) {
+    return request<void>(`/admin/media/${encodeURIComponent(id)}`, { method: 'DELETE' })
+  },
+
   adminComments(status?: string, cursor?: string) {
     const path = appendParams('/admin/comments', { status, cursor, limit: 50 })
     return request<CursorPage<AdminComment>>(path.slice(API_BASE.length))
