@@ -1,4 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { articleApi } from './articles/api'
+import { formatArticleDate } from './articles/pageMeta'
+import type { PublicArticleSummary } from './articles/types'
 import { ActivityWalls } from './components/ActivityWalls'
 import { Arrow, SitePage } from './components/SiteChrome'
 
@@ -14,6 +18,8 @@ type FeatureBandProps = {
   tone: 'graphite' | 'indigo'
   visual: 'robot' | 'dashboard'
   reverse?: boolean
+  projectLogTag?: string
+  projectLogLabel?: string
 }
 
 function HeroVisual() {
@@ -195,6 +201,98 @@ function ContactSection() {
   )
 }
 
+function RecentWritingSection({ hasRobomasterLog }: { hasRobomasterLog: boolean }) {
+  const [articles, setArticles] = useState<PublicArticleSummary[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
+  const [retryKey, setRetryKey] = useState(0)
+
+  useEffect(() => {
+    let active = true
+
+    articleApi.list().then((page) => {
+      if (!active) return
+      setArticles(page.items.slice(0, 3))
+      setError(false)
+    }).catch(() => {
+      if (active) setError(true)
+    }).finally(() => {
+      if (active) setLoading(false)
+    })
+
+    return () => { active = false }
+  }, [retryKey])
+
+  return (
+    <section className="recent-work" id="latest" aria-labelledby="recent-work-title">
+      <div className="recent-work__inner">
+        <div className="recent-work__intro" data-reveal>
+          <div>
+            <p className="section-kicker">RECENT ARTICLES / FEATURED PROJECT</p>
+            <h2 id="recent-work-title">最近文章 / 项目索引</h2>
+          </div>
+          <p>最近写的文章，还有首页里的项目。</p>
+        </div>
+
+        <div className="recent-work__layout">
+          <div className="recent-articles" data-reveal>
+            <div className="recent-articles__header">
+              <h3>最近文章</h3>
+              <Link to="/articles">全部文章 <Arrow /></Link>
+            </div>
+
+            <div className="recent-articles__list" aria-live="polite" aria-busy={loading}>
+              {loading && (
+                <div className="recent-articles__skeleton">
+                  <span className="sr-only">正在读取最近文章…</span>
+                  {Array.from({ length: 3 }, (_, index) => <i aria-hidden="true" key={index} />)}
+                </div>
+              )}
+              {!loading && error && (
+                <div className="recent-articles__state recent-articles__state--error">
+                  <strong>最近文章暂时读不到。</strong>
+                  <Link to="/articles">打开文章页 <Arrow /></Link>
+                  <button type="button" onClick={() => { setLoading(true); setRetryKey((value) => value + 1) }}>重试</button>
+                </div>
+              )}
+              {!loading && !error && articles.length === 0 && (
+                <p className="recent-articles__state">还没有公开文章。</p>
+              )}
+              {!loading && !error && articles.length > 0 && (
+                <ol>
+                  {articles.map((article, index) => (
+                    <li key={article.id}>
+                      <span className="recent-article__number">{String(index + 1).padStart(2, '0')}</span>
+                      <div className="recent-article__copy">
+                        <p>{formatArticleDate(article.publishedAt)} · {article.readingMinutes} MIN READ</p>
+                        <h4><Link to={`/articles/${article.slug}`}>{article.title}</Link></h4>
+                        <span>{article.summary}</span>
+                      </div>
+                      <span className="recent-article__arrow" aria-hidden="true">
+                        <Arrow />
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+          </div>
+
+          <aside className="current-project" aria-labelledby="current-project-title" data-reveal>
+            <p className="current-project__eyebrow">FEATURED PROJECT / ROBOMASTER</p>
+            <h3 id="current-project-title">RM Robot Rust<br />Control Framework</h3>
+            <p>面向 RoboMaster 的 Rust 整车控制框架。</p>
+            <div className="current-project__links">
+              <a href="https://github.com/ZONGRUICHD/RM-Robot-Rust" target="_blank" rel="noreferrer">查看项目源码 <Arrow /></a>
+              {hasRobomasterLog && <Link to="/articles?tag=robomaster">查看项目日志 <Arrow /></Link>}
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function FeatureBand({
   eyebrow,
   title,
@@ -207,6 +305,8 @@ function FeatureBand({
   tone,
   visual,
   reverse = false,
+  projectLogTag,
+  projectLogLabel = '查看项目日志',
 }: FeatureBandProps) {
   return (
     <article className={`feature-band feature-band--${tone}${reverse ? ' feature-band--reverse' : ''}`}>
@@ -226,9 +326,16 @@ function FeatureBand({
           <div className="feature-tags" aria-label="项目技术栈">
             {tags.map((tag) => <span key={tag}>{tag}</span>)}
           </div>
-          <a className="button button--light" href={href} target="_blank" rel="noreferrer">
-            {cta} <Arrow />
-          </a>
+          <div className="feature-band__actions">
+            <a className="button button--light" href={href} target="_blank" rel="noreferrer">
+              {cta} <Arrow />
+            </a>
+            {projectLogTag && (
+              <Link className="feature-band__log-link" to={`/articles?tag=${encodeURIComponent(projectLogTag)}`}>
+                {projectLogLabel} <Arrow />
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     </article>
@@ -236,6 +343,8 @@ function FeatureBand({
 }
 
 function App() {
+  const [articleTags, setArticleTags] = useState<Set<string>>(() => new Set())
+
   useEffect(() => {
     const root = document.documentElement
     root.classList.add('js')
@@ -260,6 +369,16 @@ function App() {
       observer.disconnect()
       root.classList.remove('js')
     }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    articleApi.tags().then(({ items }) => {
+      if (active) setArticleTags(new Set(items.map((tag) => tag.slug)))
+    }).catch(() => {
+      // Project-log links stay hidden when the tag index is unavailable.
+    })
+    return () => { active = false }
   }, [])
 
   return (
@@ -293,6 +412,8 @@ function App() {
             cta="查看项目源码"
             tone="graphite"
             visual="robot"
+            projectLogTag={articleTags.has('robomaster') ? 'robomaster' : undefined}
+            projectLogLabel="RoboMaster 项目日志"
           />
 
           <FeatureBand
@@ -307,6 +428,8 @@ function App() {
             tone="indigo"
             visual="dashboard"
             reverse
+            projectLogTag={articleTags.has('arista') ? 'arista' : undefined}
+            projectLogLabel="Arista 项目日志"
           />
         </section>
 
@@ -356,6 +479,7 @@ function App() {
           </div>
         </section>
 
+        <RecentWritingSection hasRobomasterLog={articleTags.has('robomaster')} />
         <ActivityWalls />
         <ContactSection />
       </main>

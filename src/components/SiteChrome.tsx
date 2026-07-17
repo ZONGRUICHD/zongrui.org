@@ -2,6 +2,9 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ThemeSwitcher } from './ThemeSwitcher'
 
+const HOME_SECTIONS = ['work', 'web', 'latest', 'activity', 'contact'] as const
+type HomeSection = (typeof HOME_SECTIONS)[number]
+
 export function Arrow() {
   return <span aria-hidden="true">↗</span>
 }
@@ -20,6 +23,7 @@ type SiteHeaderProps = {
 
 export function SiteHeader({ compact = false }: SiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [activeSection, setActiveSection] = useState<HomeSection | ''>('')
   const location = useLocation()
 
   useEffect(() => {
@@ -35,7 +39,55 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
     return () => window.removeEventListener('keydown', handleEscape)
   }, [])
 
-  const articleActive = location.pathname.startsWith('/articles')
+  useEffect(() => {
+    if (location.pathname !== '/') {
+      setActiveSection('')
+      return
+    }
+
+    const sections = HOME_SECTIONS
+      .map((id) => document.getElementById(id))
+      .filter((section): section is HTMLElement => section !== null)
+    if (sections.length === 0) return
+
+    let frame = 0
+    const update = () => {
+      frame = 0
+      const marker = window.scrollY + Math.min(window.innerHeight * 0.32, 260)
+      let current: HomeSection | '' = ''
+      sections.forEach((section) => {
+        const sectionTop = section.getBoundingClientRect().top + window.scrollY
+        if (sectionTop <= marker) current = section.id as HomeSection
+      })
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 8) {
+        current = 'contact'
+      }
+      setActiveSection((previous) => previous === current ? previous : current)
+    }
+    const scheduleUpdate = () => {
+      if (!frame) frame = window.requestAnimationFrame(update)
+    }
+
+    update()
+    window.addEventListener('scroll', scheduleUpdate, { passive: true })
+    window.addEventListener('resize', scheduleUpdate)
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', scheduleUpdate)
+      window.removeEventListener('resize', scheduleUpdate)
+    }
+  }, [location.pathname])
+
+  const articlePageActive = location.pathname.startsWith('/articles')
+  const articleSectionActive = location.pathname === '/' && activeSection === 'latest'
+  const articleActive = articlePageActive || articleSectionActive
+  const homeSectionProps = (section: HomeSection) => {
+    const active = location.pathname === '/' && activeSection === section
+    return {
+      className: active ? 'is-active' : undefined,
+      'aria-current': active ? 'location' as const : undefined,
+    }
+  }
 
   return (
     <header className={`site-header${compact ? ' site-header--compact' : ''}`}>
@@ -70,13 +122,13 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
       <nav id="site-navigation" className={`site-nav${menuOpen ? ' is-open' : ''}`} aria-label="主导航">
         <div className="site-nav__inner">
           <div className="site-nav__modes">
-            <a href="/#work">技术作品</a>
-            <a href="/#web">网页与故事</a>
-            <a href="/#activity">活动墙</a>
-            <Link className={articleActive ? 'is-active' : undefined} to="/articles" aria-current={articleActive ? 'page' : undefined}>
+            <a href="/#work" {...homeSectionProps('work')}>技术作品</a>
+            <a href="/#web" {...homeSectionProps('web')}>网页与故事</a>
+            <Link className={articleActive ? 'is-active' : undefined} to="/articles" aria-current={articlePageActive ? 'page' : undefined}>
               文章
             </Link>
-            <a href="/#contact">联系方式</a>
+            <a href="/#activity" {...homeSectionProps('activity')}>活动墙</a>
+            <a href="/#contact" {...homeSectionProps('contact')}>联系方式</a>
           </div>
           <div className="site-nav__links">
             <a href="/#work">作品</a>
