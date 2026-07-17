@@ -979,7 +979,6 @@ img {
 }
 
 .web-stories,
-.gal-library,
 .about,
 .focus,
 .portals {
@@ -992,7 +991,6 @@ img {
 }
 
 .section-intro,
-.gal-library__inner,
 .about__inner,
 .focus__inner,
 .portals__inner {
@@ -1009,7 +1007,6 @@ img {
 }
 
 .section-intro h2,
-.gal-library h2,
 .about h2,
 .focus h2,
 .portals h2 {
@@ -1143,300 +1140,6 @@ img {
   color: rgba(255, 255, 255, 0.85);
   font-size: 0.88rem;
   line-height: 1.5;
-}
-
-.gal-library {
-  position: relative;
-  padding: clamp(5.8rem, 9vw, 8.8rem) 3rem clamp(6.5rem, 10vw, 9.5rem);
-  overflow: hidden;
-  color: var(--paper);
-  background-color: var(--rpi-dark-blue);
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
-    radial-gradient(circle at 82% 16%, rgba(121, 167, 236, 0.24), transparent 28rem);
-  background-size: 4rem 4rem, 4rem 4rem, auto;
-}
-
-.gal-library::before {
-  position: absolute;
-  top: clamp(7rem, 13vw, 13rem);
-  right: -0.08em;
-  content: 'GAL';
-  color: transparent;
-  font-size: clamp(12rem, 28vw, 29rem);
-  line-height: 0.7;
-  letter-spacing: -0.14em;
-  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.09);
-  pointer-events: none;
-}
-
-.gal-library__inner {
-  position: relative;
-  z-index: 1;
-}
-
-.gal-library__header {
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(22rem, 0.85fr);
-  gap: clamp(3rem, 8vw, 7.5rem);
-  align-items: end;
-  margin-bottom: clamp(3.2rem, 6vw, 5.4rem);
-}
-
-.gal-library .section-kicker {
-  color: var(--rpi-light-red);
-}
-
-.gal-library h2 {
-  max-width: 12ch;
-}
-
-.gal-library__summary {
-  display: flex;
-  align-items: end;
-  padding-bottom: 0.35rem;
-}
-
-.gal-library__count {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  min-width: 6.4rem;
-}
-
-.gal-library__count strong {
-  color: var(--rpi-light-red);
-  font-size: clamp(4rem, 7vw, 6.2rem);
-  line-height: 0.78;
-  letter-spacing: -0.1em;
-}
-
-.gal-library__count span {
-  margin-top: 0.9rem;
-  color: rgba(255, 255, 255, 0.52);
-  font-size: 0.48rem;
-  line-height: 1;
-  letter-spacing: 0.08em;
-}
-
-.gal-library__rail-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
-  margin-bottom: 1rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
-}
-
-.gal-library__rail-toolbar > p {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.56);
-  font-size: 0.52rem;
-  line-height: 1;
-  letter-spacing: 0.08em;
-}
-
-.gal-library__rail-controls {
-  display: flex;
-  gap: 0.55rem;
-}
-
-.gal-library__rail-controls button {
-  display: grid;
-  place-items: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  padding: 0;
-  color: var(--paper);
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.38);
-  cursor: pointer;
-  transition: color 200ms ease, background 200ms ease, border-color 200ms ease, transform 160ms ease;
-}
-
-.gal-library__rail-controls button:hover {
-  color: var(--rpi-dark-blue);
-  background: var(--paper);
-  border-color: var(--paper);
-}
-
-.gal-library__rail-controls button:active {
-  transform: scale(0.96);
-}
-
-.gal-library__rail-controls button[aria-pressed='true'] {
-  color: var(--rpi-dark-blue);
-  background: var(--paper);
-  border-color: var(--paper);
-}
-
-.gal-library__pause span {
-  font-size: 0.86rem;
-  line-height: 1;
-}
-
-.gal-grid {
-  --gal-rail-gutter: clamp(1rem, 3vw, 3rem);
-
-  display: flex;
-  gap: 1.15rem;
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
-  padding: 0.45rem var(--gal-rail-gutter) 1.35rem;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-behavior: auto;
-  scroll-padding-inline: var(--gal-rail-gutter);
-  scrollbar-width: none;
-  overscroll-behavior-x: contain;
-  touch-action: pan-x pan-y pinch-zoom;
-  -webkit-overflow-scrolling: touch;
-  -ms-overflow-style: none;
-}
-
-.gal-grid:focus-visible {
-  outline-offset: -3px;
-}
-
-.gal-grid__group {
-  display: flex;
-  flex: none;
-  gap: 1.15rem;
-}
-
-.gal-grid::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
-}
-
-.gal-card {
-  flex: 0 0 clamp(13rem, 19vw, 15.4rem);
-  min-width: 0;
-  color: var(--ink);
-  background: var(--paper);
-  box-shadow: 0 1.15rem 2.1rem rgba(3, 18, 44, 0.2);
-  transition: transform 240ms ease, box-shadow 240ms ease;
-}
-
-.gal-card:hover {
-  box-shadow: 0 1.6rem 2.8rem rgba(3, 18, 44, 0.34);
-  transform: translateY(-0.38rem);
-}
-
-.gal-card figure {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  height: 100%;
-  margin: 0;
-}
-
-.gal-card__cover {
-  position: relative;
-  aspect-ratio: 2 / 3;
-  overflow: hidden;
-  background: #0a234c;
-}
-
-.gal-card__cover::after {
-  position: absolute;
-  inset: auto 0 0;
-  height: 32%;
-  content: '';
-  background: linear-gradient(transparent, rgba(5, 15, 30, 0.64));
-  pointer-events: none;
-}
-
-.gal-card__cover img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.gal-card:hover .gal-card__cover img {
-  transform: scale(1.028);
-}
-
-.gal-card__cover > span {
-  position: absolute;
-  z-index: 1;
-  right: 0.6rem;
-  bottom: 0.55rem;
-  padding: 0.34rem 0.42rem;
-  color: rgba(255, 255, 255, 0.88);
-  background: rgba(8, 24, 47, 0.76);
-  font-size: 0.44rem;
-  line-height: 1;
-  letter-spacing: 0.06em;
-  backdrop-filter: blur(0.35rem);
-}
-
-.gal-card figcaption {
-  display: grid;
-  grid-template-columns: 2rem minmax(0, 1fr) 1.8rem;
-  gap: 0.75rem;
-  align-items: start;
-  padding: 1.1rem 0.9rem 1.25rem;
-  border-bottom: 0.28rem solid var(--rpi-red);
-}
-
-.gal-card__index {
-  color: var(--rpi-red);
-  font-size: 0.65rem;
-  line-height: 1.35;
-  letter-spacing: 0.04em;
-}
-
-.gal-card figcaption div {
-  min-width: 0;
-}
-
-.gal-card figcaption p {
-  margin: 0 0 0.45rem;
-  color: var(--rpi-blue);
-  font-size: 0.48rem;
-  line-height: 1.2;
-  letter-spacing: 0.055em;
-  overflow-wrap: anywhere;
-  text-transform: uppercase;
-}
-
-.gal-card h3 {
-  margin: 0;
-  font-size: clamp(0.92rem, 1.35vw, 1.15rem);
-  line-height: 1.25;
-  letter-spacing: -0.045em;
-  overflow-wrap: anywhere;
-  text-wrap: balance;
-}
-
-.gal-card figcaption div > span {
-  display: block;
-  margin-top: 0.7rem;
-  color: var(--muted);
-  font-size: 0.69rem;
-  line-height: 1.55;
-  text-wrap: pretty;
-}
-
-.gal-card__arrow {
-  display: grid;
-  place-items: center;
-  width: 1.8rem;
-  height: 1.8rem;
-  border: 1px solid var(--line);
-  font-size: 0.75rem;
-  transition: color 200ms ease, background 200ms ease, border-color 200ms ease, transform 200ms ease;
-}
-
-.gal-card:hover .gal-card__arrow {
-  color: var(--paper);
-  background: var(--rpi-red);
-  border-color: var(--rpi-red);
-  transform: rotate(45deg);
 }
 
 .about {
@@ -1777,7 +1480,6 @@ img {
   }
 
   .section-intro,
-  .gal-library__header,
   .about__inner,
   .focus__inner {
     grid-template-columns: 1fr;
@@ -1786,10 +1488,6 @@ img {
 
   .story-grid {
     grid-template-columns: 1fr;
-  }
-
-  .gal-card {
-    flex-basis: 13.25rem;
   }
 
   .story-card--notes {
@@ -1996,7 +1694,6 @@ img {
   }
 
   .web-stories,
-  .gal-library,
   .about,
   .focus,
   .portals {
@@ -2014,7 +1711,6 @@ img {
   }
 
   .section-intro h2,
-  .gal-library h2,
   .about h2,
   .focus h2,
   .portals h2 {
@@ -2036,64 +1732,6 @@ img {
 
   .story-card__copy {
     padding: 1.5rem;
-  }
-
-  .gal-library__header {
-    display: block;
-    margin-bottom: 2.8rem;
-  }
-
-  .gal-library__summary {
-    margin-top: 2.2rem;
-  }
-
-  .gal-library__count {
-    min-width: 5rem;
-  }
-
-  .gal-library__count strong {
-    font-size: 4.1rem;
-  }
-
-  .gal-grid {
-    gap: 0.72rem;
-    padding-bottom: 1rem;
-  }
-
-  .gal-grid__group {
-    gap: 0.72rem;
-  }
-
-  .gal-card {
-    flex-basis: min(72vw, 11.5rem);
-  }
-
-  .gal-library__rail-toolbar {
-    margin-bottom: 0.7rem;
-  }
-
-  .gal-library__rail-controls button {
-    width: 2.5rem;
-    height: 2.5rem;
-  }
-
-  .gal-card figcaption {
-    grid-template-columns: 1.45rem minmax(0, 1fr);
-    gap: 0.45rem;
-    padding: 0.85rem 0.65rem 1rem;
-  }
-
-  .gal-card h3 {
-    font-size: clamp(0.76rem, 3.5vw, 0.95rem);
-    line-height: 1.3;
-  }
-
-  .gal-card figcaption div > span {
-    font-size: 0.59rem;
-  }
-
-  .gal-card__arrow {
-    display: none;
   }
 
   .about__inner {
@@ -2175,9 +1813,6 @@ img {
     transform: none;
   }
 
-  .gal-library__pause {
-    display: none;
-  }
 }
 
   .activity-walls {

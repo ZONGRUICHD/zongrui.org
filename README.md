@@ -1,6 +1,6 @@
 # zongrui.org
 
-ZongRui 的个人网站，包含个人主页、技术作品、网页存档、Galgame 收藏、GitHub/Codex 活动墙，以及一套自托管的完整博客系统。
+ZongRui 的个人网站，包含个人主页、技术作品、网页存档、GitHub/Codex 活动墙，以及一套自托管的完整博客系统。
 
 - 主站：[https://zongrui.org](https://zongrui.org)
 - 博客：[https://zongrui.org/articles](https://zongrui.org/articles)

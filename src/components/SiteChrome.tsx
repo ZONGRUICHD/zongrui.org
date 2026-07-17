@@ -68,7 +68,6 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
           <div className="site-nav__modes">
             <a href="/#work">技术作品</a>
             <a href="/#web">网页与故事</a>
-            <a href="/#gal">Galgame 收藏</a>
             <a href="/#activity">活动墙</a>
             <Link className={articleActive ? 'is-active' : undefined} to="/articles" aria-current={articleActive ? 'page' : undefined}>
               文章
@@ -114,7 +113,6 @@ export function SiteFooter() {
             {' · '}
             <a href="https://commons.wikimedia.org/wiki/File:Rust_programming_language_black_logo.svg" target="_blank" rel="noreferrer">Rust logo — Rust Foundation / CC BY 4.0</a>
           </span>
-          <span>Steam library cover artwork © respective developers and publishers; shown for collection identification.</span>
           <a href="#top">返回顶部 ↑</a>
         </div>
       </div>
