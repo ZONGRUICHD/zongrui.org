@@ -61,7 +61,7 @@ flowchart LR
 | 富文本编辑 | TipTap 3.28.0：Core、React、Starter Kit、Link、Placeholder、Underline，以及自定义 `figureImage` 节点 |
 | 数据访问 | 浏览器原生 Fetch API；同源 `/api/articles/v1`；JSON、`FormData`、Cookie 与 CSRF 请求头 |
 | 草稿与离线 | `localStorage`、3 秒空闲自动保存、离线草稿恢复、5 分钟自动修订检查点、revision 冲突提示 |
-| 样式 | 手写 CSS、CSS Custom Properties、Grid、Flex、响应式媒体查询、系统 `prefers-color-scheme` 暗色模式与 `prefers-reduced-motion`；没有使用 Tailwind、Sass 或组件 UI 框架 |
+| 样式 | 手写 CSS、CSS Custom Properties、Grid、Flex、响应式媒体查询、可持久化的系统/浅色/深色三档主题与 `prefers-reduced-motion`；没有使用 Tailwind、Sass 或组件 UI 框架 |
 | 字体 | `@fontsource-variable/jetbrains-mono` 5.2.8；本地托管 HarmonyOS Sans SC Bold |
 | 静态媒体 | WebP、SVG、GIF；Vite 指纹资源使用一年 immutable 缓存 |
 | 构建 | Vite 8.1.4、`@vitejs/plugin-react` 6.0.3、TypeScript 7.0.2 strict mode、ES2022、Lightning CSS 1.32.0 |

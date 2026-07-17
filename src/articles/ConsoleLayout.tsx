@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
+import { ThemeSwitcher } from '../components/ThemeSwitcher'
 import { articleApi } from './api'
 import { usePageMeta } from './pageMeta'
 import type { AuthSession } from './types'
@@ -28,6 +29,7 @@ export function ConsoleGate({ children }: { children: ReactNode }) {
   if (!session.authenticated) {
     return (
       <main className="console-gate" id="main-content">
+        <ThemeSwitcher className="console-gate__theme-switcher" />
         <img src="/avatar.jpg" alt="" />
         <p className="articles-kicker">ZONGRUI ARTICLES / PRIVATE CONSOLE</p>
         <h1>文章管理台</h1>
@@ -63,6 +65,7 @@ function ConsoleLayout({ session, children }: { session: AuthSession; children: 
           <NavLink to="/articles/console/comments">评论</NavLink>
           <Link to="/articles" target="_blank">查看网站 ↗</Link>
         </nav>
+        <ThemeSwitcher className="console-theme-switcher" />
         <div className="console-user">
           {session.user?.avatarUrl && <img src={session.user.avatarUrl} alt="" />}
           <span>{session.user?.login ?? 'ZONGRUICHD'}</span>

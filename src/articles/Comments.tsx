@@ -10,6 +10,20 @@ const TURNSTILE_SITE_KEY =
 function Turnstile({ onToken, resetKey }: { onToken: (token: string) => void; resetKey: number }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const widgetRef = useRef<string | null>(null)
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => document.documentElement.dataset.resolvedTheme === 'dark' ? 'dark' : 'light')
+
+  useEffect(() => {
+    const root = document.documentElement
+    const observer = new MutationObserver(() => {
+      const nextTheme = root.dataset.resolvedTheme === 'dark' ? 'dark' : 'light'
+      setTheme((current) => {
+        if (current !== nextTheme) onToken('')
+        return nextTheme
+      })
+    })
+    observer.observe(root, { attributes: true, attributeFilter: ['data-resolved-theme'] })
+    return () => observer.disconnect()
+  }, [onToken])
 
   useEffect(() => {
     if (!TURNSTILE_SITE_KEY || !containerRef.current) return
@@ -20,7 +34,7 @@ function Turnstile({ onToken, resetKey }: { onToken: (token: string) => void; re
       widgetRef.current = window.turnstile.render(containerRef.current, {
         sitekey: TURNSTILE_SITE_KEY,
         action: 'turnstile-spin-v1',
-        theme: 'light',
+        theme,
         size: 'flexible',
         callback: onToken,
         'expired-callback': () => onToken(''),
@@ -43,8 +57,12 @@ function Turnstile({ onToken, resetKey }: { onToken: (token: string) => void; re
     return () => {
       cancelled = true
       existing?.removeEventListener('load', render)
+      if (widgetRef.current) {
+        window.turnstile?.remove?.(widgetRef.current)
+        widgetRef.current = null
+      }
     }
-  }, [onToken])
+  }, [onToken, theme])
 
   useEffect(() => {
     if (!widgetRef.current) return
