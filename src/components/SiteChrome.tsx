@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { ThemeSwitcher } from './ThemeSwitcher'
 
 export function Arrow() {
   return <span aria-hidden="true">↗</span>
@@ -46,9 +47,12 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
             <small>Rust · RoboMaster · Linux</small>
           </span>
         </Link>
-        <a className="masthead-github" href="https://github.com/zongruichd" target="_blank" rel="noreferrer">
-          GitHub <Arrow />
-        </a>
+        <div className="masthead-actions">
+          <ThemeSwitcher className="masthead-theme-switcher" />
+          <a className="masthead-github" href="https://github.com/zongruichd" target="_blank" rel="noreferrer">
+            GitHub <Arrow />
+          </a>
+        </div>
         <button
           className="menu-button"
           type="button"
