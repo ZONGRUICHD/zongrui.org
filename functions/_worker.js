@@ -797,6 +797,27 @@ async function handleSitemap(request, env, ctx) {
   )
 }
 
+async function fetchStaticAsset(request, env) {
+  const response = await env.ASSETS.fetch(request)
+  const url = new URL(request.url)
+  const contentType = response.headers.get('Content-Type') ?? ''
+
+  // Pages can serve the SPA shell for a missing file. Never let that HTML
+  // fallback be cached under an immutable /assets/* URL as JavaScript or CSS.
+  if (url.pathname.startsWith('/assets/') && contentType.toLowerCase().includes('text/html')) {
+    return new Response(null, {
+      status: 404,
+      headers: {
+        'Cache-Control': 'no-store',
+        'Content-Type': 'text/plain; charset=utf-8',
+        'X-Content-Type-Options': 'nosniff',
+      },
+    })
+  }
+
+  return response
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url)
@@ -817,6 +838,6 @@ export default {
       return handleSitemap(request, env, ctx)
     }
 
-    return env.ASSETS.fetch(request)
+    return fetchStaticAsset(request, env)
   },
 }

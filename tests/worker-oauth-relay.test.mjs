@@ -110,3 +110,24 @@ test('OAuth relay distinguishes GitHub outages from an invalid authorization cod
     globalThis.fetch = originalFetch
   }
 })
+
+test('immutable asset paths never return the SPA HTML fallback', async () => {
+  const assetEnv = {
+    ASSETS: {
+      fetch: async () => new Response('<!doctype html><title>ZongRui</title>', {
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      }),
+    },
+  }
+
+  const response = await worker.fetch(
+    new Request('https://zongrui.org/assets/missing-build-chunk.js'),
+    assetEnv,
+    ctx,
+  )
+
+  assert.equal(response.status, 404)
+  assert.equal(response.headers.get('Cache-Control'), 'no-store')
+  assert.equal(response.headers.get('X-Content-Type-Options'), 'nosniff')
+  assert.equal(await response.text(), '')
+})
