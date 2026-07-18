@@ -3577,6 +3577,38 @@ img {
 .console-gate > p:not(.articles-kicker) { color: var(--muted); }
 .console-gate .articles-primary-button { margin: 1.5rem 0; }
 
+.console-gate__notice {
+  width: min(100%, 38rem);
+  margin-top: 1.5rem;
+  padding: 1.1rem 1.25rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-left: 0.35rem solid var(--rpi-red);
+}
+
+.console-gate__notice strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.console-gate__notice p:not(.articles-kicker) {
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.console-gate__notice .articles-kicker { margin: 0 0 0.65rem; }
+
+.console-gate__actions {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.console-gate__actions .articles-primary-button { margin: 1.5rem 0 0; }
+.console-gate__actions a { margin-top: 1.5rem; }
+
 .console-gate__theme-switcher {
   position: absolute;
   top: 1.25rem;

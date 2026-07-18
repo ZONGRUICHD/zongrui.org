@@ -1,4 +1,5 @@
 const API_PREFIX = '/api/articles'
+const GITHUB_EXCHANGE_PATH = `${API_PREFIX}/_oauth/github/exchange`
 const PUBLIC_SITE_ORIGIN = 'https://zongrui.org'
 const PUBLIC_CACHE_TTL_SECONDS = 300
 const INDEX_CACHE_TTL_SECONDS = 60
@@ -28,7 +29,7 @@ const PAGE_SECURITY_POLICY = {
   referrer: 'strict-origin-when-cross-origin',
 }
 
-function jsonError(status, code, message) {
+function jsonError(status, code, message, extraHeaders = {}) {
   return Response.json(
     { error: { code, message } },
     {
@@ -41,9 +42,148 @@ function jsonError(status, code, message) {
         'Strict-Transport-Security': PAGE_SECURITY_POLICY.hsts,
         'X-Content-Type-Options': 'nosniff',
         'X-Frame-Options': 'DENY',
+        ...extraHeaders,
       },
     },
   )
+}
+
+async function secretsMatch(supplied, expected) {
+  const encoder = new TextEncoder()
+  const [suppliedHash, expectedHash] = await Promise.all([
+    crypto.subtle.digest('SHA-256', encoder.encode(supplied)),
+    crypto.subtle.digest('SHA-256', encoder.encode(expected)),
+  ])
+  const suppliedBytes = new Uint8Array(suppliedHash)
+  const expectedBytes = new Uint8Array(expectedHash)
+  let difference = supplied.length ^ expected.length
+  for (let index = 0; index < suppliedBytes.length; index += 1) {
+    difference |= suppliedBytes[index] ^ expectedBytes[index]
+  }
+  return difference === 0
+}
+
+function relayResponse(payload, status, requestId) {
+  return Response.json(payload, {
+    status,
+    headers: {
+      'Cache-Control': 'private, no-store',
+      'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'",
+      'Permissions-Policy': PAGE_SECURITY_POLICY.permissions,
+      'Referrer-Policy': PAGE_SECURITY_POLICY.referrer,
+      'Strict-Transport-Security': PAGE_SECURITY_POLICY.hsts,
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'X-ZR-Request-ID': requestId,
+    },
+  })
+}
+
+async function handleGithubExchangeRelay(request, env) {
+  const requestId = crypto.randomUUID()
+  if (request.method !== 'POST') {
+    const response = jsonError(405, 'method_not_allowed', 'Method not allowed.', {
+      Allow: 'POST',
+      'X-ZR-Request-ID': requestId,
+    })
+    return response
+  }
+
+  const relaySecret = env.ARTICLES_ORIGIN_SHARED_SECRET
+  if (!relaySecret) {
+    return jsonError(503, 'github_relay_not_configured', 'GitHub 登录中继尚未配置。', {
+      'X-ZR-Request-ID': requestId,
+    })
+  }
+
+  const suppliedSecret = request.headers.get('X-ZR-Origin-Token') ?? ''
+  if (!await secretsMatch(suppliedSecret, relaySecret)) {
+    return jsonError(404, 'not_found', 'Not found.', { 'X-ZR-Request-ID': requestId })
+  }
+
+  try {
+    const rawBody = await request.text()
+    if (rawBody.length > 4096) {
+      return jsonError(413, 'relay_request_too_large', 'Request is too large.', {
+        'X-ZR-Request-ID': requestId,
+      })
+    }
+    let payload
+    try {
+      payload = JSON.parse(rawBody)
+    } catch {
+      return jsonError(400, 'invalid_github_exchange_request', 'Invalid GitHub exchange request.', {
+        'X-ZR-Request-ID': requestId,
+      })
+    }
+    const { clientId, clientSecret, code, redirectUri } = payload
+    const expectedRedirectUri = `${PUBLIC_SITE_ORIGIN}${API_PREFIX}/v1/auth/github/callback`
+    const validPayload = typeof clientId === 'string' && clientId.length > 0 && clientId.length <= 256
+      && typeof clientSecret === 'string' && clientSecret.length > 0 && clientSecret.length <= 1024
+      && typeof code === 'string' && code.length > 0 && code.length <= 512
+      && redirectUri === expectedRedirectUri
+    if (!validPayload) {
+      return jsonError(400, 'invalid_github_exchange_request', 'Invalid GitHub exchange request.', {
+        'X-ZR-Request-ID': requestId,
+      })
+    }
+
+    const upstreamSignal = AbortSignal.timeout(10_000)
+    const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
+      method: 'POST',
+      signal: upstreamSignal,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'zongrui-articles-edge/1.0',
+      },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        code,
+        redirect_uri: redirectUri,
+      }),
+    })
+    const tokenPayload = await tokenResponse.json().catch(() => null)
+    if (tokenResponse.status === 429) {
+      return relayResponse({ error: { code: 'github_rate_limited' } }, 503, requestId)
+    }
+    if (tokenResponse.status >= 500) {
+      return relayResponse({ error: { code: 'github_oauth_unavailable' } }, 502, requestId)
+    }
+    const accessToken = tokenPayload?.access_token
+    if (!tokenResponse.ok || tokenPayload?.error === 'bad_verification_code') {
+      return relayResponse({ error: { code: 'github_oauth_exchange_failed' } }, 401, requestId)
+    }
+    if (typeof accessToken !== 'string' || !accessToken) {
+      return relayResponse({ error: { code: 'github_oauth_unavailable' } }, 502, requestId)
+    }
+
+    const userResponse = await fetch('https://api.github.com/user', {
+      signal: upstreamSignal,
+      headers: {
+        Accept: 'application/vnd.github+json',
+        Authorization: `Bearer ${accessToken}`,
+        'User-Agent': 'zongrui-articles-edge/1.0',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+    })
+    const user = await userResponse.json().catch(() => null)
+    if (!userResponse.ok || !Number.isInteger(user?.id) || typeof user?.login !== 'string') {
+      return relayResponse({ error: { code: 'github_user_lookup_failed' } }, 502, requestId)
+    }
+
+    return relayResponse({ id: user.id, login: user.login, avatarUrl: user.avatar_url ?? null }, 200, requestId)
+  } catch (error) {
+    console.error(JSON.stringify({
+      event: 'github_exchange_relay_failed',
+      requestId,
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    }))
+    return jsonError(502, 'github_relay_unavailable', 'GitHub 登录服务暂时不可用。', {
+      'X-ZR-Request-ID': requestId,
+    })
+  }
 }
 
 function escapeHtml(value = '') {
@@ -186,9 +326,38 @@ async function fetchOrigin(request, env, apiPathOverride) {
   try {
     const response = await fetch(built.target, built.init)
     return sanitizeOriginResponse(rewriteLocation(response, request, built.origin))
-  } catch {
-    return jsonError(503, 'articles_offline', '文章服务器暂时离线，请稍后再试。')
+  } catch (error) {
+    const requestId = crypto.randomUUID()
+    console.error(JSON.stringify({
+      event: 'articles_origin_fetch_failed',
+      requestId,
+      path: new URL(request.url).pathname,
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    }))
+    return jsonError(503, 'articles_offline', '文章服务器暂时离线，请稍后再试。', {
+      'X-ZR-Request-ID': requestId,
+    })
   }
+}
+
+function normalizePrivateUpstreamError(response, request) {
+  const contentType = response.headers.get('Content-Type') ?? ''
+  if (response.status < 500 || contentType.toLowerCase().includes('application/json')) {
+    return response
+  }
+
+  const requestId = crypto.randomUUID()
+  console.error(JSON.stringify({
+    event: 'articles_origin_non_json_error',
+    requestId,
+    path: new URL(request.url).pathname,
+    status: response.status,
+    contentType: contentType.slice(0, 80),
+  }))
+  const status = response.status === 503 ? 503 : 502
+  return jsonError(status, 'articles_origin_error', '文章服务暂时不可用，请稍后再试。', {
+    'X-ZR-Request-ID': requestId,
+  })
 }
 
 function isParameterizedArticleList(request) {
@@ -289,10 +458,11 @@ async function invalidatePublicCache(response, request, ctx) {
 
 async function proxyArticlesApi(request, env, ctx) {
   if (!isPublicCacheableApi(request)) {
-    const response = await fetchOrigin(request, env)
+    const originResponse = await fetchOrigin(request, env)
     if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
-      await invalidatePublicCache(response.clone(), request, ctx)
+      await invalidatePublicCache(originResponse.clone(), request, ctx)
     }
+    const response = normalizePrivateUpstreamError(originResponse, request)
     return isParameterizedArticleList(request) ? responseWithNoStore(response) : response
   }
 
@@ -631,6 +801,10 @@ async function handleSitemap(request, env, ctx) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url)
+
+    if (url.pathname === GITHUB_EXCHANGE_PATH) {
+      return handleGithubExchangeRelay(request, env)
+    }
 
     if (url.pathname === API_PREFIX || url.pathname.startsWith(`${API_PREFIX}/`)) {
       return proxyArticlesApi(request, env, ctx)

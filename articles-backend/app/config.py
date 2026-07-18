@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from ipaddress import ip_address
 from pathlib import Path
+from urllib.parse import urlparse
 
-from pydantic import AliasChoices, Field, field_validator
+from pydantic import AliasChoices, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -24,6 +26,8 @@ class Settings(BaseSettings):
 
     github_client_id: str = ""
     github_client_secret: str = ""
+    github_exchange_relay_url: str = ""
+    github_exchange_relay_enabled: bool = True
     admin_github_user_id: int = Field(default=0, ge=0)
     admin_github_login: str = "ZONGRUICHD"
 
@@ -54,6 +58,50 @@ class Settings(BaseSettings):
             raise ValueError("must be an absolute HTTP(S) URL")
         return value
 
+    @field_validator("github_exchange_relay_url")
+    @classmethod
+    def normalise_optional_url(cls, value: str) -> str:
+        value = value.strip().rstrip("/")
+        if not value:
+            return value
+        parsed = urlparse(value)
+        if parsed.scheme not in {"https", "http"} or not parsed.hostname:
+            raise ValueError("must be an absolute HTTP(S) URL when configured")
+        if parsed.username or parsed.password or parsed.query or parsed.fragment:
+            raise ValueError("must not contain credentials, a query, or a fragment")
+        if parsed.path != "/api/articles/_oauth/github/exchange":
+            raise ValueError("must use the GitHub exchange relay path")
+        is_loopback = parsed.hostname == "localhost"
+        try:
+            is_loopback = is_loopback or ip_address(parsed.hostname).is_loopback
+        except ValueError:
+            pass
+        if parsed.scheme != "https" and not is_loopback:
+            raise ValueError("must use HTTPS unless the relay is loopback-only")
+        return value
+
+    @model_validator(mode="after")
+    def validate_github_exchange_relay_host(self) -> Settings:
+        if not self.github_exchange_relay_url:
+            return self
+        relay_host = urlparse(self.github_exchange_relay_url).hostname or ""
+        public_host = urlparse(self.public_base_url).hostname or ""
+        is_loopback = relay_host == "localhost"
+        try:
+            is_loopback = is_loopback or ip_address(relay_host).is_loopback
+        except ValueError:
+            pass
+        is_allowed_host = (
+            is_loopback
+            or relay_host == public_host
+            or relay_host.endswith(f".{public_host}")
+            or relay_host == "zongrui-org.pages.dev"
+            or relay_host.endswith(".zongrui-org.pages.dev")
+        )
+        if not is_allowed_host:
+            raise ValueError("GitHub exchange relay host must belong to the public site or Cloudflare Pages")
+        return self
+
     @field_validator("rate_limit_secret")
     @classmethod
     def validate_rate_limit_secret(cls, value: str) -> str:
@@ -76,6 +124,16 @@ class Settings(BaseSettings):
     def oauth_callback_url(self) -> str:
         return f"{self.api_base}/auth/github/callback"
 
+    @property
+    def oauth_exchange_relay_url(self) -> str:
+        if not self.github_exchange_relay_enabled:
+            return ""
+        if self.github_exchange_relay_url:
+            return self.github_exchange_relay_url
+        if self.origin_shared_secret:
+            return f"{self.public_base_url}/api/articles/_oauth/github/exchange"
+        return ""
+
     def validate_runtime_secrets(self) -> None:
         missing: list[str] = []
         def unset(value: str) -> bool:
@@ -92,6 +150,13 @@ class Settings(BaseSettings):
         if not self.turnstile_bypass and unset(self.turnstile_secret):
             missing.append("ARTICLES_TURNSTILE_SECRET")
         if self.origin_shared_secret and unset(self.origin_shared_secret):
+            missing.append("ARTICLES_ORIGIN_SHARED_SECRET")
+        if (
+            self.github_exchange_relay_enabled
+            and self.github_exchange_relay_url
+            and unset(self.origin_shared_secret)
+            and "ARTICLES_ORIGIN_SHARED_SECRET" not in missing
+        ):
             missing.append("ARTICLES_ORIGIN_SHARED_SECRET")
         if missing:
             raise RuntimeError("missing required configuration: " + ", ".join(missing))
