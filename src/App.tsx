@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { articleApi } from './articles/api'
-import { formatArticleDate } from './articles/pageMeta'
-import type { PublicArticleSummary } from './articles/types'
+import { usePageMeta } from './articles/pageMeta'
 import { ActivityWalls } from './components/ActivityWalls'
 import { Arrow, SitePage } from './components/SiteChrome'
 import { SiteVisitorCounter } from './components/SiteVisitorCounter'
@@ -21,48 +20,6 @@ type FeatureBandProps = {
   reverse?: boolean
   projectLogTag?: string
   projectLogLabel?: string
-}
-
-function HeroVisual() {
-  const keys = ['R', 'S', 'T', 'L', 'I', 'N', 'U', 'X', 'A', 'I', 'C', 'O', 'D', 'E']
-
-  return (
-    <figure className="hero-showcase" data-reveal>
-      <div className="hero-showcase__blueprint" aria-hidden="true" />
-      <div className="hero-module hero-module--rust" aria-hidden="true">
-        <span>RUST</span>
-        <small>NO_STD</small>
-      </div>
-      <div className="hero-module hero-module--linux" aria-hidden="true">
-        <span>LINUX</span>
-        <small>ONLINE</small>
-      </div>
-      <div className="hero-module hero-module--network" aria-hidden="true">
-        <span>NETWORK</span>
-        <small>10G</small>
-      </div>
-      <div className="hero-device">
-        <div className="hero-device__lights" aria-hidden="true">
-          <i />
-          <i />
-          <i />
-        </div>
-        <img src="/avatar.jpg" alt="ZongRui 使用的企鹅头像" />
-        <div className="hero-device__label">
-          <span>ZONGRUI</span>
-          <small>BUILDER / 0831</small>
-        </div>
-      </div>
-      <div className="hero-keyboard" aria-hidden="true">
-        {keys.map((key, index) => (
-          <span key={`${key}-${index}`}>{key}</span>
-        ))}
-      </div>
-      <figcaption className="sr-only">
-        由 Rust、Linux、网络模块和个人头像组成的工程工作台插画
-      </figcaption>
-    </figure>
-  )
 }
 
 function RobotVisual() {
@@ -150,20 +107,36 @@ function DashboardVisual() {
   )
 }
 
+function TelegramIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M23.91 3.79 20.3 20.84c-.27 1.21-.98 1.5-1.99.93l-5.5-4.05-2.65 2.55c-.29.29-.54.54-1.11.54l.4-5.6 10.19-9.2c.44-.4-.1-.62-.69-.23L6.36 13.7.94 12c-1.18-.37-1.2-1.18.25-1.75L22.4 2.08c.98-.36 1.84.24 1.51 1.71Z" />
+    </svg>
+  )
+}
+
+function XIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z" />
+    </svg>
+  )
+}
+
 function ContactSection() {
   const contacts = [
     {
       label: 'Telegram',
       handle: '@zongruichd',
       href: 'https://t.me/zongruichd',
-      mark: 'TG',
+      icon: <TelegramIcon />,
       note: '发消息给我',
     },
     {
       label: 'X',
       handle: '@zongruichd',
       href: 'https://x.com/zongruichd',
-      mark: 'X',
+      icon: <XIcon />,
       note: '看看我最近在说什么',
     },
   ]
@@ -173,8 +146,7 @@ function ContactSection() {
       <div className="contact-section__inner">
         <div className="contact-section__intro" data-reveal>
           <p className="section-kicker">CONTACT / ELSEWHERE</p>
-          <h2 id="contact-title">找到我。</h2>
-          <p>Telegram 和 X 都用同一个用户名。</p>
+          <h2 id="contact-title">联系方式</h2>
         </div>
         <div className="contact-grid" aria-label="联系方式">
           {contacts.map((contact, index) => (
@@ -187,7 +159,7 @@ function ContactSection() {
               data-reveal
             >
               <span className="contact-card__index">0{index + 1}</span>
-              <span className="contact-card__mark" aria-hidden="true">{contact.mark}</span>
+              <span className="contact-card__mark">{contact.icon}</span>
               <span className="contact-card__copy">
                 <small>{contact.label}</small>
                 <strong>{contact.handle}</strong>
@@ -196,88 +168,6 @@ function ContactSection() {
               <Arrow />
             </a>
           ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-function RecentWritingSection() {
-  const [articles, setArticles] = useState<PublicArticleSummary[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
-  const [retryKey, setRetryKey] = useState(0)
-
-  useEffect(() => {
-    let active = true
-
-    articleApi.list().then((page) => {
-      if (!active) return
-      setArticles(page.items.slice(0, 3))
-      setError(false)
-    }).catch(() => {
-      if (active) setError(true)
-    }).finally(() => {
-      if (active) setLoading(false)
-    })
-
-    return () => { active = false }
-  }, [retryKey])
-
-  return (
-    <section className="recent-work" id="latest" aria-labelledby="recent-work-title">
-      <div className="recent-work__inner">
-        <div className="recent-work__intro" data-reveal>
-          <div>
-            <p className="section-kicker">RECENT ARTICLES</p>
-            <h2 id="recent-work-title">最近文章</h2>
-          </div>
-          <p>最近写的文章。</p>
-        </div>
-
-        <div className="recent-work__layout">
-          <div className="recent-articles" data-reveal>
-            <div className="recent-articles__header">
-              <h3>最近文章</h3>
-              <Link to="/articles">全部文章 <Arrow /></Link>
-            </div>
-
-            <div className="recent-articles__list" aria-live="polite" aria-busy={loading}>
-              {loading && (
-                <div className="recent-articles__skeleton">
-                  <span className="sr-only">正在读取最近文章…</span>
-                  {Array.from({ length: 3 }, (_, index) => <i aria-hidden="true" key={index} />)}
-                </div>
-              )}
-              {!loading && error && (
-                <div className="recent-articles__state recent-articles__state--error">
-                  <strong>最近文章暂时读不到。</strong>
-                  <Link to="/articles">打开文章页 <Arrow /></Link>
-                  <button type="button" onClick={() => { setLoading(true); setRetryKey((value) => value + 1) }}>重试</button>
-                </div>
-              )}
-              {!loading && !error && articles.length === 0 && (
-                <p className="recent-articles__state">还没有公开文章。</p>
-              )}
-              {!loading && !error && articles.length > 0 && (
-                <ol>
-                  {articles.map((article, index) => (
-                    <li key={article.id}>
-                      <span className="recent-article__number">{String(index + 1).padStart(2, '0')}</span>
-                      <div className="recent-article__copy">
-                        <p>{formatArticleDate(article.publishedAt)} · {article.readingMinutes} MIN READ</p>
-                        <h4><Link to={`/articles/${article.slug}`}>{article.title}</Link></h4>
-                        <span>{article.summary}</span>
-                      </div>
-                      <span className="recent-article__arrow" aria-hidden="true">
-                        <Arrow />
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </div>
-          </div>
         </div>
       </div>
     </section>
@@ -336,6 +226,15 @@ function FeatureBand({
 function App() {
   const [articleTags, setArticleTags] = useState<Set<string>>(() => new Set())
 
+  usePageMeta({
+    title: 'ZongRui — Rust / RoboMaster / Linux',
+    description: 'ZongRui 的个人主页，放着我写的 Rust、RoboMaster、Linux、网络和网页项目。',
+    canonical: 'https://zongrui.org/',
+    image: 'https://zongrui.org/og-image.png',
+    language: 'zh-CN',
+    ogLocale: 'zh_CN',
+  })
+
   useEffect(() => {
     const root = document.documentElement
     root.classList.add('js')
@@ -377,18 +276,17 @@ function App() {
       <main id="main-content">
         <section className="hero" id="top" aria-labelledby="hero-title">
           <div className="hero__inner">
-            <div className="hero__copy" data-reveal>
-              <p className="hero-kicker">RUST · ROBOMASTER · LINUX · NETWORKS</p>
-              <h1 id="hero-title">{'Programming in Ciallo～(∠・ω< )⌒★'}</h1>
-              <div className="hero-actions">
-                <a className="button button--dark" href="/#work">看看项目</a>
-                <a className="text-link" href="https://github.com/zongruichd" target="_blank" rel="noreferrer">
-                  我的 GitHub <Arrow />
-                </a>
-              </div>
+            <div className="hero-profile" data-reveal>
+              <img className="hero-profile__avatar" src="/avatar.jpg" alt="ZongRui 的企鹅头像" />
+              <h1 id="hero-title">ZongRui</h1>
+              <p>{'Programming in Ciallo～(∠・ω< )⌒★'}</p>
             </div>
-            <HeroVisual />
+            <ActivityWalls embedded />
           </div>
+        </section>
+
+        <section className="about-placeholder" id="about" aria-labelledby="about-placeholder-title">
+          <h2 className="sr-only" id="about-placeholder-title">个人介绍</h2>
         </section>
 
         <section id="work" aria-label="代表作品">
@@ -430,7 +328,6 @@ function App() {
               <p className="section-kicker">WEB / MEMORY / NOTES</p>
               <h2 id="web-title">我的网站们</h2>
             </div>
-            <p>2022314 是毕业纪念站；ZongTech 用来记服务器、工具和踩坑。</p>
           </div>
 
           <div className="story-grid">
@@ -446,8 +343,8 @@ function App() {
               </div>
               <div className="story-card__copy">
                 <p>MEMORY / REACT</p>
-                <h3>909 青春赛季</h3>
-                <span>毕业纪念站，偶尔回去翻一翻。 <Arrow /></span>
+                <h3>初中毕业纪念</h3>
+                <span className="story-card__arrow"><Arrow /></span>
               </div>
             </a>
 
@@ -464,14 +361,12 @@ function App() {
               <div className="story-card__copy">
                 <p>WRITING / BUILD LOG</p>
                 <h3>ZongTech</h3>
-                <span>装服务、改配置、排故，做过的都记一下。 <Arrow /></span>
+                <span className="story-card__arrow"><Arrow /></span>
               </div>
             </a>
           </div>
         </section>
 
-        <RecentWritingSection />
-        <ActivityWalls />
         <ContactSection />
         <SiteVisitorCounter visible />
       </main>

@@ -5,7 +5,7 @@ import hmac
 from urllib.parse import urlparse
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
@@ -33,6 +33,18 @@ class ResponsePolicyMiddleware(BaseHTTPMiddleware):
         path = request.url.path
         media_host = urlparse(settings.media_public_base_url).hostname
         if host == media_host:
+            forwarded_proto = request.headers.get("x-forwarded-proto", "").split(",", 1)[0].strip().lower()
+            if forwarded_proto == "http":
+                secure_url = request.url.replace(scheme="https", netloc=host)
+                return RedirectResponse(
+                    str(secure_url),
+                    status_code=308,
+                    headers={
+                        "Cache-Control": "no-store",
+                        "Strict-Transport-Security": HSTS_HEADER,
+                        "X-Content-Type-Options": "nosniff",
+                    },
+                )
             if not path.startswith("/media/"):
                 return JSONResponse(
                     {"detail": "not found"},

@@ -157,3 +157,118 @@ test('Pages adapter forwards asset requests through the ASSETS binding', async (
   assert.equal(await response.text(), 'window.__themeReady = true')
   assert.deepEqual(requestedUrls, ['https://zongrui.org/theme-init.js'])
 })
+
+test('public article lists with query parameters use the edge cache', async () => {
+  const originalFetch = globalThis.fetch
+  const originalCaches = globalThis.caches
+  const stored = new Map()
+  const pending = []
+  let originCalls = 0
+
+  globalThis.caches = {
+    default: {
+      async match(request) {
+        return stored.get(new Request(request).url)?.clone()
+      },
+      async put(request, response) {
+        stored.set(new Request(request).url, response.clone())
+      },
+      async delete(request) {
+        return stored.delete(new Request(request).url)
+      },
+    },
+  }
+  globalThis.fetch = async (input) => {
+    originCalls += 1
+    assert.equal(new Request(input).url, 'http://127.0.0.1:18232/v1/articles?limit=12&tag=rust')
+    return Response.json({ items: [{ slug: 'cached-post' }] })
+  }
+
+  const cacheCtx = { waitUntil(promise) { pending.push(promise) } }
+  const request = new Request('https://zongrui.org/api/articles/v1/articles?limit=12&tag=rust')
+  const cacheEnv = { ARTICLES_ORIGIN_URL: 'http://127.0.0.1:18232' }
+
+  try {
+    const miss = await worker.fetch(request, cacheEnv, cacheCtx)
+    assert.equal(miss.status, 200)
+    assert.equal(miss.headers.get('X-ZR-Edge-Cache'), 'MISS')
+    assert.match(miss.headers.get('Cache-Control') ?? '', /s-maxage=60/)
+    await Promise.all(pending.splice(0))
+
+    const hit = await worker.fetch(request, cacheEnv, cacheCtx)
+    assert.equal(hit.status, 200)
+    assert.equal(hit.headers.get('X-ZR-Edge-Cache'), 'HIT')
+    assert.equal(originCalls, 1)
+    assert.deepEqual(await hit.json(), { items: [{ slug: 'cached-post' }] })
+  } finally {
+    globalThis.fetch = originalFetch
+    if (originalCaches === undefined) delete globalThis.caches
+    else globalThis.caches = originalCaches
+  }
+})
+
+test('article writes invalidate every cached list query through a new cache generation', async () => {
+  const originalFetch = globalThis.fetch
+  const originalCaches = globalThis.caches
+  const stored = new Map()
+  const pending = []
+  let listCalls = 0
+
+  globalThis.caches = {
+    default: {
+      async match(request) {
+        return stored.get(new Request(request).url)?.clone()
+      },
+      async put(request, response) {
+        stored.set(new Request(request).url, response.clone())
+      },
+      async delete(request) {
+        return stored.delete(new Request(request).url)
+      },
+    },
+  }
+  globalThis.fetch = async (input, init) => {
+    const request = new Request(input, init)
+    if (request.method === 'POST') {
+      assert.equal(request.url, 'http://127.0.0.1:18232/v1/admin/articles/1/publish')
+      return new Response(null, {
+        status: 204,
+        headers: { 'X-ZR-Cache-Invalidate': '/v1/articles,/v1/articles/cached-post' },
+      })
+    }
+
+    assert.equal(request.url, 'http://127.0.0.1:18232/v1/articles?limit=12&tag=rust')
+    listCalls += 1
+    return Response.json({ items: [{ slug: `cached-post-${listCalls}` }] })
+  }
+
+  const cacheCtx = { waitUntil(promise) { pending.push(promise) } }
+  const cacheEnv = { ARTICLES_ORIGIN_URL: 'http://127.0.0.1:18232' }
+  const listRequest = new Request('https://zongrui.org/api/articles/v1/articles?limit=12&tag=rust')
+
+  try {
+    const initialMiss = await worker.fetch(listRequest, cacheEnv, cacheCtx)
+    assert.equal(initialMiss.headers.get('X-ZR-Edge-Cache'), 'MISS')
+    await Promise.all(pending.splice(0))
+
+    const initialHit = await worker.fetch(listRequest, cacheEnv, cacheCtx)
+    assert.equal(initialHit.headers.get('X-ZR-Edge-Cache'), 'HIT')
+    assert.equal(listCalls, 1)
+
+    const mutation = await worker.fetch(
+      new Request('https://zongrui.org/api/articles/v1/admin/articles/1/publish', { method: 'POST' }),
+      cacheEnv,
+      cacheCtx,
+    )
+    assert.equal(mutation.status, 204)
+
+    const invalidatedMiss = await worker.fetch(listRequest, cacheEnv, cacheCtx)
+    assert.equal(invalidatedMiss.headers.get('X-ZR-Edge-Cache'), 'MISS')
+    assert.equal(listCalls, 2)
+    assert.deepEqual(await invalidatedMiss.json(), { items: [{ slug: 'cached-post-2' }] })
+  } finally {
+    globalThis.fetch = originalFetch
+    if (originalCaches === undefined) delete globalThis.caches
+    else globalThis.caches = originalCaches
+  }
+})

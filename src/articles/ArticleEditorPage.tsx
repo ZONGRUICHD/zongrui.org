@@ -10,7 +10,7 @@ import { ConsoleGate } from './ConsoleLayout'
 import { EditorToolbar } from './EditorToolbar'
 import { FigureImage } from './FigureImage'
 import { formatArticleDate } from './pageMeta'
-import type { AdminArticle, ArticleDraftInput, ArticleRevision, ArticleStatus, ArticleWritingMode, TiptapDocument } from './types'
+import type { AdminArticle, ArticleDraftInput, ArticleLanguage, ArticleRevision, ArticleStatus, ArticleWritingMode, TiptapDocument } from './types'
 
 type LocalDraft = ArticleDraftInput & { savedAt: string; sourceUpdatedAt?: string }
 type SaveState = 'idle' | 'local' | 'saving' | 'saved' | 'offline' | 'conflict'
@@ -44,6 +44,7 @@ export function ArticleEditorPage() {
   const [revision, setRevision] = useState(0)
   const [contentJson, setContentJson] = useState<TiptapDocument>(emptyDocument)
   const [writingMode, setWritingMode] = useState<ArticleWritingMode>('horizontal')
+  const [contentLanguage, setContentLanguage] = useState<ArticleLanguage>('zh-CN')
   const [changeVersion, setChangeVersion] = useState(0)
   const [hydrated, setHydrated] = useState(!id)
   const [saveState, setSaveState] = useState<SaveState>('idle')
@@ -53,8 +54,12 @@ export function ArticleEditorPage() {
   const [showRevisions, setShowRevisions] = useState(false)
   const [preview, setPreview] = useState(false)
   const [coverUploading, setCoverUploading] = useState(false)
+  const [translating, setTranslating] = useState(false)
   const lastCheckpointRef = useRef(Date.now())
   const changeVersionRef = useRef(0)
+  // Monotonic race guard for async transforms. Autosave may reset the dirty
+  // version to zero, but it must never make an older translation look current.
+  const editGenerationRef = useRef(0)
   const revisionRef = useRef(revision)
   const saveInFlightRef = useRef<Promise<AdminArticle | null> | null>(null)
   const autosaveRetryRef = useRef<number | null>(null)
@@ -65,6 +70,7 @@ export function ArticleEditorPage() {
   revisionRef.current = revision
 
   const bumpChangeVersion = useCallback(() => {
+    editGenerationRef.current += 1
     const next = changeVersionRef.current + 1
     changeVersionRef.current = next
     setChangeVersion(next)
@@ -87,9 +93,14 @@ export function ArticleEditorPage() {
     },
   })
 
+  useEffect(() => {
+    editor?.setEditable(!preview)
+  }, [editor, preview])
+
   const tags = useMemo(() => Array.from(new Set(tagsText.split(/[,，]/).map((tag) => tag.trim()).filter(Boolean))), [tagsText])
 
   const applyArticle = useCallback((article: AdminArticle) => {
+    editGenerationRef.current += 1
     setArticleId(article.id)
     setTitle(article.title)
     setSlug(article.slug)
@@ -102,6 +113,7 @@ export function ArticleEditorPage() {
     revisionRef.current = article.revision
     setContentJson(article.contentJson ?? emptyDocument)
     setWritingMode(article.writingMode ?? 'horizontal')
+    setContentLanguage(article.contentLanguage ?? (article.writingMode === 'vertical-rl' ? 'zh-Hant' : 'zh-CN'))
     editor?.commands.setContent(article.contentJson ?? emptyDocument, { emitUpdate: false })
     changeVersionRef.current = 0
     setChangeVersion(0)
@@ -117,6 +129,7 @@ export function ArticleEditorPage() {
     setTagsText(draft.tags.join(', '))
     setContentJson(draft.contentJson)
     setWritingMode(draft.writingMode ?? 'horizontal')
+    setContentLanguage(draft.contentLanguage ?? (draft.writingMode === 'vertical-rl' ? 'zh-Hant' : 'zh-CN'))
     setRevision(draft.revision ?? revision)
     editor?.commands.setContent(draft.contentJson, { emitUpdate: false })
     setRecoverable(null)
@@ -160,17 +173,23 @@ export function ArticleEditorPage() {
     tags,
     contentJson,
     writingMode,
+    contentLanguage,
     revision: articleIdRef.current ? revisionRef.current : undefined,
     reason,
     checkpoint,
-  }), [contentJson, coverUrl, slug, summary, tags, title, writingMode])
+  }), [contentJson, contentLanguage, coverUrl, slug, summary, tags, title, writingMode])
 
   useEffect(() => {
     if (!hydrated || changeVersion === 0) return
     const timer = window.setTimeout(() => {
       const draft: LocalDraft = { ...snapshot('autosave'), savedAt: new Date().toISOString() }
-      localStorage.setItem(localKey(articleId), JSON.stringify(draft))
-      setSaveState((current) => current === 'saving' ? current : 'local')
+      try {
+        localStorage.setItem(localKey(articleId), JSON.stringify(draft))
+        setSaveState((current) => current === 'saving' ? current : 'local')
+      } catch {
+        setSaveState((current) => current === 'saving' ? current : 'offline')
+        setNotice('浏览器无法保存本地草稿。请立即手动保存，并检查隐私模式或可用存储空间。')
+      }
     }, 450)
     return () => window.clearTimeout(timer)
   }, [articleId, changeVersion, hydrated, snapshot])
@@ -347,6 +366,37 @@ export function ArticleEditorPage() {
     }
   }
 
+  const translateTraditional = async () => {
+    if (!title.trim()) return setNotice('请先填写文章标题。')
+    if (!window.confirm('使用 DeepSeek 将当前标题、摘要和正文转换为繁体中文？转换结果会覆盖编辑区，但保存后仍可从修订历史恢复。')) return
+    setTranslating(true)
+    setNotice('正在转换为繁体中文…')
+    const sourceEditGeneration = editGenerationRef.current
+    try {
+      const translated = await articleApi.translateTraditional({
+        title: title.trim(),
+        summary: summary.trim(),
+        contentJson,
+      })
+      if (editGenerationRef.current !== sourceEditGeneration) {
+        setNotice('转换期间文章发生了新编辑，因此没有覆盖当前内容。请重新转换。')
+        return
+      }
+      setTitle(translated.title)
+      setSummary(translated.summary)
+      setContentJson(translated.contentJson)
+      setContentLanguage('zh-Hant')
+      editor?.commands.setContent(translated.contentJson, { emitUpdate: false })
+      bumpChangeVersion()
+      setSaveState(articleId ? 'idle' : 'local')
+      setNotice('已转换为繁体中文并标记内容语言。请预览并保存；横排或直排仍由你选择。')
+    } catch (caught) {
+      setNotice(caught instanceof Error ? caught.message : '繁体转换失败。')
+    } finally {
+      setTranslating(false)
+    }
+  }
+
   return (
     <ConsoleGate>
       <main className="editor-page" id="main-content" aria-busy={!hydrated}>
@@ -370,6 +420,15 @@ export function ArticleEditorPage() {
             </section>
 
             <aside className="editor-sidebar">
+              <section className="editor-translation">
+                <p className="articles-kicker">DEEPSEEK / TRANSLATE</p>
+                <h2>简体转繁体</h2>
+                <p>转换标题、摘要、正文和图片说明；代码、链接与图片排版保持不变。</p>
+                <button className="articles-primary-button" type="button" disabled={translating || !title.trim()} onClick={() => void translateTraditional()}>
+                  {translating ? '正在转换…' : '使用 DeepSeek 转为繁体'}
+                </button>
+                <small>文章文字会经由本站后端发送给 DeepSeek。API Key 只保存在服务器。</small>
+              </section>
               <section><p className="articles-kicker">PUBLISH</p><div className={`console-status console-status--${status}`}>{status === 'draft' ? '草稿' : status === 'published' ? '已发布' : status === 'scheduled' ? '定时发布' : '已归档'}</div><p>Revision {revision}</p>
                 {status !== 'published' && <button className="articles-primary-button" type="button" onClick={() => void transition('publish')}>现在发布</button>}
                 {status === 'published' && <button type="button" onClick={() => void transition('unpublish')}>撤回为草稿</button>}
@@ -387,6 +446,17 @@ export function ArticleEditorPage() {
                   <label>
                     <input type="radio" name="writing-mode" value="vertical-rl" checked={writingMode === 'vertical-rl'} onChange={() => { setWritingMode('vertical-rl'); markChanged() }} />
                     <span><strong>繁中直排</strong><small>从上至下、栏从右至左；不会自动转换文字</small></span>
+                  </label>
+                </fieldset>
+                <fieldset className="editor-layout-picker">
+                  <legend>内容语言</legend>
+                  <label>
+                    <input type="radio" name="content-language" value="zh-CN" checked={contentLanguage === 'zh-CN'} onChange={() => { setContentLanguage('zh-CN'); markChanged() }} />
+                    <span><strong>简体中文</strong><small>zh-CN，用于页面语言与搜索元数据</small></span>
+                  </label>
+                  <label>
+                    <input type="radio" name="content-language" value="zh-Hant" checked={contentLanguage === 'zh-Hant'} onChange={() => { setContentLanguage('zh-Hant'); markChanged() }} />
+                    <span><strong>繁体中文</strong><small>zh-Hant，翻译完成后自动选择</small></span>
                   </label>
                 </fieldset>
                 <label><span>Slug</span><input value={slug} required pattern="[a-z0-9-]+" placeholder="about-me" onChange={(event) => { setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-')); markChanged() }} /></label>

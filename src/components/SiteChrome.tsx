@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ThemeSwitcher } from './ThemeSwitcher'
 
-const HOME_SECTIONS = ['work', 'web', 'latest', 'activity', 'contact'] as const
+const HOME_SECTIONS = ['activity', 'work', 'web', 'contact'] as const
 type HomeSection = (typeof HOME_SECTIONS)[number]
 
 export function Arrow() {
@@ -79,8 +79,6 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
   }, [location.pathname])
 
   const articlePageActive = location.pathname.startsWith('/articles')
-  const articleSectionActive = location.pathname === '/' && activeSection === 'latest'
-  const articleActive = articlePageActive || articleSectionActive
   const homeSectionProps = (section: HomeSection) => {
     const active = location.pathname === '/' && activeSection === section
     return {
@@ -124,7 +122,7 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
           <div className="site-nav__modes">
             <a href="/#work" {...homeSectionProps('work')}>技术作品</a>
             <a href="/#web" {...homeSectionProps('web')}>网页与故事</a>
-            <Link className={articleActive ? 'is-active' : undefined} to="/articles" aria-current={articlePageActive ? 'page' : undefined}>
+            <Link className={articlePageActive ? 'is-active' : undefined} to="/articles" aria-current={articlePageActive ? 'page' : undefined}>
               文章
             </Link>
             <a href="/#activity" {...homeSectionProps('activity')}>活动墙</a>

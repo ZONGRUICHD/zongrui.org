@@ -24,6 +24,7 @@ class ArticleSummaryOut(ApiModel):
     coverUrl: str | None = None
     tags: list[str]
     writingMode: Literal["horizontal", "vertical-rl"]
+    contentLanguage: Literal["zh-CN", "zh-Hant"]
     readingMinutes: int
     publishedAt: datetime | None
     updatedAt: datetime
@@ -49,6 +50,7 @@ class ArticleWrite(ApiModel):
     coverUrl: str | None = Field(default=None, max_length=500)
     tags: list[str] = Field(default_factory=list, max_length=12)
     writingMode: Literal["horizontal", "vertical-rl"] = "horizontal"
+    contentLanguage: Literal["zh-CN", "zh-Hant"] = "zh-CN"
     contentJson: dict[str, Any]
     reason: Literal["manual", "autosave"] = "manual"
     checkpoint: bool = False
@@ -84,6 +86,7 @@ class ArticlePatch(ApiModel):
     clearCover: bool = False
     tags: list[str] | None = Field(default=None, max_length=12)
     writingMode: Literal["horizontal", "vertical-rl"] | None = None
+    contentLanguage: Literal["zh-CN", "zh-Hant"] | None = None
     contentJson: dict[str, Any] | None = None
     reason: Literal["manual", "autosave"] = "manual"
     checkpoint: bool = False
@@ -214,3 +217,20 @@ class CommentEnvelope(ApiModel):
 
 class MediaEnvelope(ApiModel):
     media: MediaOut
+
+
+class TraditionalTranslationRequest(ApiModel):
+    title: str = Field(min_length=1, max_length=200)
+    summary: str = Field(default="", max_length=500)
+    contentJson: dict[str, Any]
+
+    @field_validator("title", "summary")
+    @classmethod
+    def strip_translation_text(cls, value: str) -> str:
+        return value.strip()
+
+
+class TraditionalTranslationOut(ApiModel):
+    title: str
+    summary: str
+    contentJson: dict[str, Any]

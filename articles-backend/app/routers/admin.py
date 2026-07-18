@@ -22,6 +22,8 @@ from ..schemas import (
     RevisionAction,
     RevisionList,
     ScheduleAction,
+    TraditionalTranslationOut,
+    TraditionalTranslationRequest,
 )
 from ..security import require_csrf, get_admin_session
 from ..services import (
@@ -38,9 +40,19 @@ from ..services import (
     resolve_tags,
     verify_revision,
 )
+from ..translation import translate_to_traditional
 
 
 router = APIRouter(prefix="/admin", tags=["admin"])
+
+
+@router.post("/translate/traditional", response_model=TraditionalTranslationOut)
+async def translate_article_to_traditional(
+    payload: TraditionalTranslationRequest,
+    _admin: AdminSession = Depends(require_csrf),
+    settings: Settings = Depends(get_settings),
+) -> dict[str, object]:
+    return await translate_to_traditional(payload.title, payload.summary, payload.contentJson, settings)
 
 
 def _load_article(db: Session, article_id: str) -> Article:
@@ -141,6 +153,7 @@ def create_article(
         content_html=rendered.html,
         content_text=rendered.text,
         writing_mode=payload.writingMode,
+        content_language=payload.contentLanguage,
         reading_minutes=rendered.reading_minutes,
         revision=1,
         tags=resolve_tags(db, payload.tags),
@@ -194,6 +207,8 @@ def update_article(
         article.tags = resolve_tags(db, payload.tags)
     if "writingMode" in changed_fields and payload.writingMode is not None:
         article.writing_mode = payload.writingMode
+    if "contentLanguage" in changed_fields and payload.contentLanguage is not None:
+        article.content_language = payload.contentLanguage
     if payload.clearCover:
         article.cover_media_id = None
     elif "coverMediaId" in changed_fields and "coverUrl" in changed_fields and payload.coverMediaId and payload.coverUrl:
@@ -400,6 +415,10 @@ def restore_revision(
     article.cover_media_id = restored_cover_id if restored_cover_id and db.get(Media, restored_cover_id) else None
     article.tags = resolve_tags(db, snapshot.get("tags", []))
     article.writing_mode = snapshot.get("writingMode", "horizontal")
+    article.content_language = snapshot.get(
+        "contentLanguage",
+        "zh-Hant" if article.writing_mode == "vertical-rl" else "zh-CN",
+    )
     rendered = render_content(snapshot["contentJson"], settings)
     article.content_json = json.dumps(rendered.document, ensure_ascii=False, separators=(",", ":"))
     article.content_html = rendered.html

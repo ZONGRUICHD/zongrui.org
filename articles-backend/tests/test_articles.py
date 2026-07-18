@@ -105,12 +105,14 @@ def test_published_slug_change_keeps_redirect(admin_client: TestClient, document
 def test_writing_mode_is_versioned_and_public(admin_client: TestClient, document: dict[str, object]) -> None:
     article = create_article(admin_client, document, "writing-mode")
     assert article["writingMode"] == "horizontal"
+    assert article["contentLanguage"] == "zh-CN"
 
     vertical = admin_client.patch(
         f"/api/articles/v1/admin/articles/{article['id']}",
-        json={"revision": 1, "writingMode": "vertical-rl"},
+        json={"revision": 1, "writingMode": "vertical-rl", "contentLanguage": "zh-Hant"},
     ).json()["article"]
     assert vertical["writingMode"] == "vertical-rl"
+    assert vertical["contentLanguage"] == "zh-Hant"
 
     horizontal = admin_client.patch(
         f"/api/articles/v1/admin/articles/{article['id']}",
@@ -121,6 +123,7 @@ def test_writing_mode_is_versioned_and_public(admin_client: TestClient, document
         json={"revision": horizontal["revision"]},
     ).json()["article"]
     assert restored["writingMode"] == "vertical-rl"
+    assert restored["contentLanguage"] == "zh-Hant"
 
     published = admin_client.post(
         f"/api/articles/v1/admin/articles/{article['id']}/publish",
@@ -128,6 +131,7 @@ def test_writing_mode_is_versioned_and_public(admin_client: TestClient, document
     ).json()["article"]
     detail = admin_client.get(f"/api/articles/v1/articles/{published['slug']}").json()["article"]
     assert detail["writingMode"] == "vertical-rl"
+    assert detail["contentLanguage"] == "zh-Hant"
 
     invalid = admin_client.post(
         "/api/articles/v1/admin/articles",
@@ -139,6 +143,12 @@ def test_writing_mode_is_versioned_and_public(admin_client: TestClient, document
         },
     )
     assert invalid.status_code == 422
+
+    invalid_language = admin_client.patch(
+        f"/api/articles/v1/admin/articles/{article['id']}",
+        json={"revision": published["revision"], "contentLanguage": "zh-HK-script"},
+    )
+    assert invalid_language.status_code == 422
 
 
 def test_h1_and_untrusted_image_are_rejected(admin_client: TestClient) -> None:

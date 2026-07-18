@@ -155,7 +155,7 @@ export function ArticlePage() {
     image: article.coverUrl || undefined,
     author: { '@type': 'Person', name: 'ZongRui', url: 'https://zongrui.org' },
     mainEntityOfPage: `https://zongrui.org/articles/${article.slug}`,
-    inLanguage: (article.writingMode ?? 'horizontal') === 'vertical-rl' ? 'zh-Hant' : 'zh-CN',
+    inLanguage: article.contentLanguage ?? ((article.writingMode ?? 'horizontal') === 'vertical-rl' ? 'zh-Hant' : 'zh-CN'),
     ...(viewCount === null ? {} : {
       interactionStatistic: {
         '@type': 'InteractionCounter',
@@ -172,8 +172,8 @@ export function ArticlePage() {
     image: article?.coverUrl,
     noIndex: notFound,
     jsonLd,
-    language: article ? (writingMode === 'vertical-rl' ? 'zh-Hant' : 'zh-CN') : undefined,
-    ogLocale: article ? (writingMode === 'vertical-rl' ? 'zh_TW' : 'zh_CN') : undefined,
+    language: article ? (article.contentLanguage ?? (writingMode === 'vertical-rl' ? 'zh-Hant' : 'zh-CN')) : undefined,
+    ogLocale: article ? ((article.contentLanguage ?? (writingMode === 'vertical-rl' ? 'zh-Hant' : 'zh-CN')) === 'zh-Hant' ? 'zh_TW' : 'zh_CN') : undefined,
   })
 
   useEffect(() => {
@@ -333,7 +333,7 @@ export function ArticlePage() {
               <article
                 ref={articleProseRef}
                 className={`article-prose${writingMode === 'vertical-rl' ? ' article-prose--vertical' : ''}`}
-                lang={writingMode === 'vertical-rl' ? 'zh-Hant' : 'zh-CN'}
+                lang={article.contentLanguage ?? (writingMode === 'vertical-rl' ? 'zh-Hant' : 'zh-CN')}
                 onClick={handleArticleImageClick}
                 onKeyDown={handleArticleImageKeyDown}
                 dangerouslySetInnerHTML={{ __html: prepared.html }}

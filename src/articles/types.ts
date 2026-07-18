@@ -1,5 +1,6 @@
 export type ArticleStatus = 'draft' | 'scheduled' | 'published' | 'archived'
 export type ArticleWritingMode = 'horizontal' | 'vertical-rl'
+export type ArticleLanguage = 'zh-CN' | 'zh-Hant'
 
 export type Tag = {
   name: string
@@ -18,6 +19,7 @@ export type PublicArticleSummary = {
   publishedAt: string | null
   updatedAt: string
   writingMode: ArticleWritingMode
+  contentLanguage: ArticleLanguage
 }
 
 export type PublicArticle = PublicArticleSummary & {
@@ -44,7 +46,6 @@ export type AdminArticleSummary = PublicArticleSummary & {
 
 export type AdminArticle = AdminArticleSummary & {
   contentJson: TiptapDocument
-  writingMode: ArticleWritingMode
   contentHtml?: string
 }
 
@@ -106,7 +107,12 @@ export type ArticleDraftInput = {
   tags: string[]
   contentJson: TiptapDocument
   writingMode: ArticleWritingMode
+  contentLanguage: ArticleLanguage
   revision?: number
   checkpoint?: boolean
   reason?: 'manual' | 'autosave'
 }
+
+export type TraditionalTranslationInput = Pick<ArticleDraftInput, 'title' | 'summary' | 'contentJson'>
+
+export type TraditionalTranslationResult = TraditionalTranslationInput

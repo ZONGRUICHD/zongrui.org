@@ -75,6 +75,11 @@ Admin (session required; every mutation also requires `X-CSRF-Token`):
 - `GET|POST /admin/media`, `DELETE /admin/media/{id}`.
 - `GET /admin/comments` and
   `POST /admin/comments/{id}/hide|restore|delete`.
+- `POST /admin/translate/traditional` with
+  `{title,summary,contentJson}` converts Simplified Chinese to Traditional
+  Chinese and returns the same shape. It requires an administrator session and
+  CSRF token. It does not save or publish anything; the Console applies the
+  result through the existing revision-aware article save flow.
 
 Article writes use a required `revision` on PATCH/action calls. A stale value
 returns HTTP 409 with `currentRevision`. PATCH accepts `reason` (`manual` or
@@ -164,6 +169,17 @@ remain root-owned, group-readable only by `zongrui-articles-data`, and must
 never enter Git. Rotating `ARTICLES_STATISTICS_SECRET` makes returning networks
 look new; rotate it only while clearing `site_visitors` and `article_readers`
 and resetting `ARTICLES_STATISTICS_STARTED_AT` in the same maintenance window.
+
+For Console translation, set `DEEPSEEK_API_KEY` only in
+`/etc/zongrui-articles.env`. The browser and Cloudflare Pages must never receive
+it. The default API base is `https://api.deepseek.com` and the default model is
+`deepseek-v4-flash`; both can be changed with `DEEPSEEK_API_BASE_URL` and
+`DEEPSEEK_MODEL`. Requests are split into bounded batches using the serialized
+segment JSON (including wrapper and IDs), plus a conservative completion-token
+estimate with reserved output headroom. Responses fail closed on a timeout,
+incomplete output, changed segment IDs, changed non-Chinese text, a changed Han
+character count, or an oversized response. A missing key leaves the rest of
+the service healthy and makes only the translation endpoint return HTTP 503.
 
 Create a GitHub OAuth App with this exact callback URL:
 

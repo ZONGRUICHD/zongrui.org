@@ -40,6 +40,7 @@ class Article(Base):
     content_html: Mapped[str] = mapped_column(Text, default="")
     content_text: Mapped[str] = mapped_column(Text, default="")
     writing_mode: Mapped[str] = mapped_column(String(16), default="horizontal", server_default="horizontal")
+    content_language: Mapped[str] = mapped_column(String(16), default="zh-CN", server_default="zh-CN")
     reading_minutes: Mapped[int] = mapped_column(Integer, default=1)
     revision: Mapped[int] = mapped_column(Integer, default=1)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
