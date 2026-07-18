@@ -91,6 +91,13 @@ def test_media_is_reencoded_and_svg_is_rejected(admin_client: TestClient, docume
     media_head = admin_client.head(urlparse(media["url"]).path, headers={"Host": "media.example.test"})
     assert media_head.status_code == 200
     assert media_head.content == b""
+    insecure_media = admin_client.get(
+        urlparse(media["url"]).path,
+        headers={"Host": "media.example.test", "X-Forwarded-Proto": "http"},
+        follow_redirects=False,
+    )
+    assert insecure_media.status_code == 308
+    assert insecure_media.headers["location"].startswith("https://media.example.test/media/")
 
     document_with_figure = {
         "type": "doc",

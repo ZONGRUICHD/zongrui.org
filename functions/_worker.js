@@ -4,6 +4,8 @@ const PUBLIC_SITE_ORIGIN = 'https://zongrui.org'
 const PUBLIC_CACHE_TTL_SECONDS = 300
 const INDEX_CACHE_TTL_SECONDS = 60
 const STALE_CACHE_TTL_SECONDS = 7 * 24 * 60 * 60
+const CACHE_GENERATION_TTL_SECONDS = 365 * 24 * 60 * 60
+const PUBLIC_CACHE_GENERATION_PATH = '/.zr-cache/articles-generation'
 const PUBLIC_HTML_CACHE_CONTROL = `public, max-age=0, s-maxage=${PUBLIC_CACHE_TTL_SECONDS}, stale-while-revalidate=${STALE_CACHE_TTL_SECONDS}, stale-if-error=${STALE_CACHE_TTL_SECONDS}`
 
 const BLOCKED_FORWARD_HEADERS = [
@@ -323,6 +325,12 @@ async function fetchOrigin(request, env, apiPathOverride) {
   const built = buildOriginRequest(request, env, apiPathOverride)
   if (built.error) return built.error
 
+  // Public reads have a stale cache fallback. Bound the origin wait so an
+  // unreachable home server cannot leave readers behind a hanging request.
+  if (isPublicCacheableApi(request)) {
+    built.init.signal = AbortSignal.timeout(6500)
+  }
+
   try {
     const response = await fetch(built.target, built.init)
     return sanitizeOriginResponse(rewriteLocation(response, request, built.origin))
@@ -360,12 +368,6 @@ function normalizePrivateUpstreamError(response, request) {
   })
 }
 
-function isParameterizedArticleList(request) {
-  if (request.method !== 'GET') return false
-  const url = new URL(request.url)
-  return url.pathname.slice(API_PREFIX.length) === '/v1/articles' && Boolean(url.search)
-}
-
 function isPublicCacheableApi(request) {
   if (request.method !== 'GET') return false
 
@@ -373,8 +375,6 @@ function isPublicCacheableApi(request) {
   const path = url.pathname.slice(API_PREFIX.length)
   if (path.includes('/comments')) return false
   if (path.includes('/admin/') || path.includes('/auth/')) return false
-  if (isParameterizedArticleList(request)) return false
-
   return (
     path === '/v1/articles'
     || path.startsWith('/v1/articles/')
@@ -382,15 +382,6 @@ function isPublicCacheableApi(request) {
     || path === '/v1/rss.xml'
     || path === '/v1/sitemap.xml'
   )
-}
-
-function responseWithNoStore(response) {
-  const headers = new Headers(response.headers)
-  headers.set('Cache-Control', 'no-store')
-  headers.delete('CDN-Cache-Control')
-  headers.delete('Cloudflare-CDN-Cache-Control')
-  headers.set('X-ZR-Edge-Cache', 'BYPASS')
-  return new Response(response.body, { status: response.status, statusText: response.statusText, headers })
 }
 
 function apiFreshnessSeconds(request) {
@@ -437,37 +428,64 @@ async function storePublicResponse(cache, key, response) {
   )
 }
 
-function publicCacheKey(request) {
+function publicCacheGenerationKey(request) {
+  return new Request(new URL(PUBLIC_CACHE_GENERATION_PATH, request.url).toString(), { method: 'GET' })
+}
+
+async function readPublicCacheGeneration(cache, request) {
+  const marker = await cache.match(publicCacheGenerationKey(request))
+  if (!marker) return bumpPublicCacheGeneration(cache, request)
+
+  const generation = (await marker.text()).trim()
+  return /^[A-Za-z0-9_-]{1,80}$/.test(generation)
+    ? generation
+    : bumpPublicCacheGeneration(cache, request)
+}
+
+async function bumpPublicCacheGeneration(cache, request) {
+  const generation = crypto.randomUUID()
+  await cache.put(
+    publicCacheGenerationKey(request),
+    new Response(generation, {
+      headers: {
+        'Cache-Control': `public, max-age=${CACHE_GENERATION_TTL_SECONDS}`,
+        'Content-Type': 'text/plain; charset=utf-8',
+      },
+    }),
+  )
+  return generation
+}
+
+function publicCacheKey(request, generation) {
   const url = new URL(request.url)
   url.hash = ''
+  // Cache API entries are immutable across a generation. A write advances the
+  // marker, so every query-string variant becomes unreachable immediately
+  // without trying to enumerate an unbounded set of list/search URLs.
+  url.searchParams.set('__zr_edge_generation', generation)
   return new Request(url.toString(), { method: 'GET' })
 }
 
-async function invalidatePublicCache(response, request, ctx) {
+async function invalidatePublicCache(response, request) {
   const rawPaths = response.headers.get('X-ZR-Cache-Invalidate')
   if (!rawPaths) return
 
-  const origin = new URL(request.url).origin
-  const paths = rawPaths.split(',').map((value) => value.trim()).filter(Boolean)
-  const deletions = paths.map((path) => {
-    const publicPath = path.startsWith('/v1/') ? `${API_PREFIX}${path}` : path
-    return caches.default.delete(new Request(new URL(publicPath, origin).toString(), { method: 'GET' }))
-  })
-  ctx.waitUntil(Promise.all(deletions))
+  await bumpPublicCacheGeneration(caches.default, request)
 }
 
 async function proxyArticlesApi(request, env, ctx) {
   if (!isPublicCacheableApi(request)) {
     const originResponse = await fetchOrigin(request, env)
     if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
-      await invalidatePublicCache(originResponse.clone(), request, ctx)
+      await invalidatePublicCache(originResponse.clone(), request)
     }
     const response = normalizePrivateUpstreamError(originResponse, request)
-    return isParameterizedArticleList(request) ? responseWithNoStore(response) : response
+    return response
   }
 
   const cache = caches.default
-  const key = publicCacheKey(request)
+  const generation = await readPublicCacheGeneration(cache, request)
+  const key = publicCacheKey(request, generation)
   const freshnessSeconds = apiFreshnessSeconds(request)
   const cached = await cache.match(key)
   const age = cached ? Date.now() - cachedAt(cached) : Number.POSITIVE_INFINITY
@@ -602,6 +620,7 @@ function articleServerMarkup(article) {
   const readingMinutes = articleField(article, 'readingMinutes', 'reading_minutes')
   const writingMode = articleField(article, 'writingMode', 'writing_mode', 'horizontal')
   const vertical = writingMode === 'vertical-rl'
+  const articleLanguage = articleField(article, 'contentLanguage', 'content_language', vertical ? 'zh-Hant' : 'zh-CN')
 
   return `
     <main class="articles-ssr" id="main-content" data-articles-ssr>
@@ -615,7 +634,7 @@ function articleServerMarkup(article) {
         </div>
       </header>
       <div class="article-layout${vertical ? ' article-layout--vertical' : ''}">
-        <article class="article-prose${vertical ? ' article-prose--vertical' : ''}" lang="${vertical ? 'zh-Hant' : 'zh-CN'}">${content}</article>
+        <article class="article-prose${vertical ? ' article-prose--vertical' : ''}" lang="${articleLanguage}">${content}</article>
       </div>
     </main>`
 }
@@ -733,7 +752,12 @@ async function handleArticlePage(request, env, ctx) {
   const publishedAt = articleField(article, 'publishedAt', 'published_at')
   const updatedAt = articleField(article, 'updatedAt', 'updated_at', publishedAt)
   const writingMode = articleField(article, 'writingMode', 'writing_mode', 'horizontal')
-  const articleLanguage = writingMode === 'vertical-rl' ? 'zh-Hant' : 'zh-CN'
+  const articleLanguage = articleField(
+    article,
+    'contentLanguage',
+    'content_language',
+    writingMode === 'vertical-rl' ? 'zh-Hant' : 'zh-CN',
+  )
   return transformShell(request, env, {
     title: `${title} — ZongRui`,
     description: summary,
@@ -741,7 +765,7 @@ async function handleArticlePage(request, env, ctx) {
     image: cover,
     ogType: 'article',
     lang: articleLanguage,
-    ogLocale: writingMode === 'vertical-rl' ? 'zh_TW' : 'zh_CN',
+    ogLocale: articleLanguage === 'zh-Hant' ? 'zh_TW' : 'zh_CN',
     rootHtml: articleServerMarkup(article),
     bootstrap: payload,
     jsonLd: {

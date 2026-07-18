@@ -32,6 +32,26 @@ class Settings(BaseSettings):
     admin_github_user_id: int = Field(default=0, ge=0)
     admin_github_login: str = "ZONGRUICHD"
 
+    deepseek_api_key: str = Field(
+        default="",
+        validation_alias=AliasChoices("ARTICLES_DEEPSEEK_API_KEY", "DEEPSEEK_API_KEY"),
+    )
+    deepseek_api_base_url: str = Field(
+        default="https://api.deepseek.com",
+        validation_alias=AliasChoices("ARTICLES_DEEPSEEK_API_BASE_URL", "DEEPSEEK_API_BASE_URL"),
+    )
+    deepseek_model: str = Field(
+        default="deepseek-v4-flash",
+        validation_alias=AliasChoices("ARTICLES_DEEPSEEK_MODEL", "DEEPSEEK_MODEL"),
+    )
+    deepseek_request_timeout_seconds: float = Field(default=30.0, ge=5.0, le=60.0)
+    deepseek_total_timeout_seconds: float = Field(default=90.0, ge=10.0, le=180.0)
+    deepseek_max_input_chars: int = Field(default=100_000, ge=1_000, le=250_000)
+    deepseek_batch_chars: int = Field(default=6_000, ge=1_000, le=24_000)
+    deepseek_max_segments: int = Field(default=5_000, ge=10, le=20_000)
+    deepseek_max_output_bytes: int = Field(default=512 * 1024, ge=64 * 1024, le=2 * 1024 * 1024)
+    deepseek_max_tokens: int = Field(default=8_192, ge=512, le=8_192)
+
     turnstile_secret: str = ""
     turnstile_site_key: str = ""
     turnstile_action: str = "turnstile-spin-v1"
@@ -81,6 +101,25 @@ class Settings(BaseSettings):
             pass
         if parsed.scheme != "https" and not is_loopback:
             raise ValueError("must use HTTPS unless the relay is loopback-only")
+        return value
+
+    @field_validator("deepseek_api_base_url")
+    @classmethod
+    def normalise_deepseek_url(cls, value: str) -> str:
+        value = value.strip().rstrip("/")
+        parsed = urlparse(value)
+        if parsed.scheme != "https" or not parsed.hostname:
+            raise ValueError("DeepSeek API base URL must be absolute HTTPS")
+        if parsed.username or parsed.password or parsed.query or parsed.fragment:
+            raise ValueError("DeepSeek API base URL must not contain credentials, a query, or a fragment")
+        return value
+
+    @field_validator("deepseek_model")
+    @classmethod
+    def validate_deepseek_model(cls, value: str) -> str:
+        value = value.strip()
+        if not value or len(value) > 100 or any(char.isspace() for char in value):
+            raise ValueError("DeepSeek model name is invalid")
         return value
 
     @model_validator(mode="after")

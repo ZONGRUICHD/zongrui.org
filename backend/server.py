@@ -402,12 +402,18 @@ class ActivityHandler(BaseHTTPRequestHandler):
         sys.stderr.write("activity-api: request processing error\n")
 
     def do_GET(self) -> None:  # noqa: N802
+        if self._redirect_insecure_public_request():
+            return
         self._handle_get(head_only=False)
 
     def do_HEAD(self) -> None:  # noqa: N802
+        if self._redirect_insecure_public_request():
+            return
         self._handle_get(head_only=True)
 
     def do_OPTIONS(self) -> None:  # noqa: N802
+        if self._redirect_insecure_public_request():
+            return
         path = urlsplit(self.path).path
         if path not in {
             "/health",
@@ -445,6 +451,8 @@ class ActivityHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self) -> None:  # noqa: N802
+        if self._redirect_insecure_public_request():
+            return
         path = urlsplit(self.path).path
         source = {
             "/api/sync/github": "github",
@@ -503,6 +511,17 @@ class ActivityHandler(BaseHTTPRequestHandler):
 
     def _method_not_allowed(self) -> None:
         self._error(HTTPStatus.METHOD_NOT_ALLOWED, "method_not_allowed", "Method not allowed")
+
+    def _redirect_insecure_public_request(self) -> bool:
+        forwarded_proto = self.headers.get("X-Forwarded-Proto", "").split(",", 1)[0].strip().lower()
+        if forwarded_proto != "http":
+            return False
+        self.send_response(HTTPStatus.PERMANENT_REDIRECT)
+        self._common_headers(NO_CACHE)
+        self.send_header("Location", f"https://api.zongrui.org{self.path}")
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+        return True
 
     def _handle_get(self, *, head_only: bool) -> None:
         path = urlsplit(self.path).path

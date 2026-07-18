@@ -6,10 +6,20 @@ const THEME_CHANGE_EVENT = 'zongrui-theme-preference-change'
 export type ThemePreference = 'system' | 'light' | 'dark'
 
 const preferences: ReadonlyArray<{ value: ThemePreference; label: string }> = [
-  { value: 'system', label: '系统' },
-  { value: 'light', label: '浅色' },
-  { value: 'dark', label: '深色' },
+  { value: 'light', label: '浅色主题' },
+  { value: 'system', label: '跟随系统' },
+  { value: 'dark', label: '深色主题' },
 ]
+
+function ThemeIcon({ preference }: { preference: ThemePreference }) {
+  if (preference === 'light') {
+    return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.5" /><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42" /></svg>
+  }
+  if (preference === 'dark') {
+    return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.4 15.2A8.5 8.5 0 0 1 8.8 3.6 8.7 8.7 0 1 0 20.4 15.2Z" /></svg>
+  }
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8M12 17v4" /></svg>
+}
 
 function isThemePreference(value: string | null): value is ThemePreference {
   return value === 'system' || value === 'light' || value === 'dark'
@@ -18,9 +28,9 @@ function isThemePreference(value: string | null): value is ThemePreference {
 export function getThemePreference(): ThemePreference {
   try {
     const value = window.localStorage.getItem(THEME_STORAGE_KEY)
-    return isThemePreference(value) ? value : 'system'
+    return isThemePreference(value) ? value : 'light'
   } catch {
-    return 'system'
+    return 'light'
   }
 }
 
@@ -93,9 +103,12 @@ export function ThemeSwitcher({ className = '' }: ThemeSwitcherProps) {
           type="button"
           key={value}
           aria-pressed={preference === value}
+          aria-label={label}
+          title={label}
           onClick={() => selectPreference(value)}
         >
-          {label}
+          <ThemeIcon preference={value} />
+          <span className="sr-only">{label}</span>
         </button>
       ))}
     </div>

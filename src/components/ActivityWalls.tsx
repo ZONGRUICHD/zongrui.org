@@ -186,19 +186,50 @@ function ActivityWall({
   showDayTokens = false,
 }: ActivityWallProps) {
   const viewportRef = useRef<HTMLDivElement>(null)
-  const hasPositionedLatestRef = useRef(false)
-  const dayCount = weeks.reduce(
-    (sum, week) => sum + week.days.filter((day) => day !== null).length,
-    0,
+  const calendarRef = useRef<HTMLDivElement>(null)
+  const lastMaximumScrollRef = useRef(0)
+  const hasMeasuredScrollRef = useRef(false)
+  const days = weeks.flatMap((week) => week.days).filter(
+    (day): day is ActivityDay => day !== null,
   )
+  const dayCount = days.length
+  const calendarSignature = days.map((day) => day.date).join('|')
+
+  const dayLabel = (day: ActivityDay) => {
+    const tokenLabel = showDayTokens
+      ? `，${day.tokens.toLocaleString('en-US')} Tokens`
+      : ''
+    return `${formatDate(day.date)}：${day.count} ${countLabel}${tokenLabel}`
+  }
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current
-    if (!viewport || dayCount === 0 || hasPositionedLatestRef.current) return
+    const calendar = calendarRef.current
+    if (!viewport || dayCount === 0) return
 
-    viewport.scrollLeft = Math.max(0, viewport.scrollWidth - viewport.clientWidth)
-    hasPositionedLatestRef.current = true
-  }, [dayCount])
+    const positionLatest = () => {
+      const previousMaximum = lastMaximumScrollRef.current
+      const maximumScroll = Math.max(0, viewport.scrollWidth - viewport.clientWidth)
+      const wasFollowingLatest = !hasMeasuredScrollRef.current
+        || previousMaximum <= 1
+        || Math.abs(viewport.scrollLeft - previousMaximum) <= 2
+      lastMaximumScrollRef.current = maximumScroll
+      hasMeasuredScrollRef.current = true
+      if (wasFollowingLatest && maximumScroll > 1) viewport.scrollLeft = maximumScroll
+    }
+
+    positionLatest()
+    const resizeObserver = typeof ResizeObserver === 'undefined'
+      ? null
+      : new ResizeObserver(positionLatest)
+    resizeObserver?.observe(viewport)
+    if (calendar) resizeObserver?.observe(calendar)
+    window.addEventListener('resize', positionLatest)
+    return () => {
+      resizeObserver?.disconnect()
+      window.removeEventListener('resize', positionLatest)
+    }
+  }, [calendarSignature, dayCount])
 
   return (
     <article className="activity-wall" data-tone={tone} aria-labelledby={`${tone}-wall-title`}>
@@ -242,23 +273,19 @@ function ActivityWall({
             tabIndex={0}
             aria-label={`${title}，共 ${dayCount} 天记录，当前显示最新记录，可向左横向滚动查看历史`}
           >
-            <div className="activity-wall__calendar">
+            <div ref={calendarRef} className="activity-wall__calendar">
               {weeks.map((week, weekIndex) => (
                 <div className="activity-wall__week" key={`${tone}-week-${weekIndex}`}>
                   {Array.from({ length: 7 }, (_, dayIndex) => {
                     const day = week.days[dayIndex]
                     if (!day) return <span className="activity-wall__day is-placeholder" aria-hidden="true" key={dayIndex} />
 
-                    const tokenLabel = showDayTokens
-                      ? `，${day.tokens.toLocaleString('en-US')} Tokens`
-                      : ''
-                    const label = `${formatDate(day.date)}：${day.count} ${countLabel}${tokenLabel}`
+                    const label = dayLabel(day)
                     return (
                       <span
                         className="activity-wall__day"
                         data-level={day.level}
-                        role="img"
-                        aria-label={label}
+                        aria-hidden="true"
                         title={label}
                         key={day.date}
                       />
@@ -268,6 +295,9 @@ function ActivityWall({
               ))}
             </div>
           </div>
+          <ol className="sr-only" aria-label={`${title} 每日明细`}>
+            {days.map((day) => <li key={`${tone}-accessible-${day.date}`}>{dayLabel(day)}</li>)}
+          </ol>
           <div className="activity-wall__legend" aria-label="颜色越深表示当日活跃度越高">
             <span>LESS</span>
             {[0, 1, 2, 3, 4].map((level) => (
@@ -296,7 +326,7 @@ function ActivitySkeleton() {
   )
 }
 
-export function ActivityWalls() {
+export function ActivityWalls({ embedded = false }: { embedded?: boolean }) {
   const [activity, setActivity] = useState<ActivityResponse | null>(null)
   const [error, setError] = useState(false)
   const [requestVersion, setRequestVersion] = useState(0)
@@ -307,7 +337,6 @@ export function ActivityWalls() {
 
     fetch(`${apiBaseUrl}/api/activity`, {
       headers: { Accept: 'application/json' },
-      cache: 'no-store',
       signal: controller.signal,
     })
       .then((response) => {
@@ -330,15 +359,22 @@ export function ActivityWalls() {
   )
 
   return (
-    <section className="activity-walls" id="activity" aria-labelledby="activity-walls-title">
+    <section
+      className={`activity-walls${embedded ? ' activity-walls--embedded' : ''}`}
+      id="activity"
+      aria-labelledby="activity-walls-title"
+    >
       <div className="activity-walls__inner">
-        <header className="activity-walls__intro">
-          <div>
-            <p>GITHUB + CODEX / LAST 365 DAYS</p>
-            <h2 id="activity-walls-title">过去一年的<span>提交和 Codex 用量。</span></h2>
-          </div>
-          <time dateTime={activity?.updatedAt}>{formatUpdatedAt(activity?.updatedAt)}</time>
-        </header>
+        {embedded && <h2 className="activity-walls__sr-only" id="activity-walls-title">GitHub 与 Codex 活动墙</h2>}
+        {!embedded && (
+          <header className="activity-walls__intro">
+            <div>
+              <p>GITHUB + CODEX / LAST 365 DAYS</p>
+              <h2 id="activity-walls-title">过去一年的<span>提交和 Codex 用量。</span></h2>
+            </div>
+            <time dateTime={activity?.updatedAt}>{formatUpdatedAt(activity?.updatedAt)}</time>
+          </header>
+        )}
 
         {!activity && !error && <ActivitySkeleton />}
 

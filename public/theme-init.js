@@ -7,9 +7,9 @@
   function readPreference() {
     try {
       var value = window.localStorage.getItem(storageKey);
-      return value === 'system' || value === 'light' || value === 'dark' ? value : 'system';
+      return value === 'system' || value === 'light' || value === 'dark' ? value : 'light';
     } catch (_error) {
-      return 'system';
+      return 'light';
     }
   }
 

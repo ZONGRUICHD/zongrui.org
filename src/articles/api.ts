@@ -11,6 +11,8 @@ import type {
   PublicArticle,
   PublicArticleSummary,
   Tag,
+  TraditionalTranslationInput,
+  TraditionalTranslationResult,
   VisitorStats,
 } from './types'
 
@@ -165,6 +167,13 @@ export const articleApi = {
     return request<{ article: AdminArticle }>(`/admin/articles/${encodeURIComponent(id)}/revisions/${storedRevision}/restore`, {
       method: 'POST',
       body: JSON.stringify({ revision: currentRevision }),
+    })
+  },
+
+  translateTraditional(input: TraditionalTranslationInput) {
+    return request<TraditionalTranslationResult>('/admin/translate/traditional', {
+      method: 'POST',
+      body: JSON.stringify(input),
     })
   },
 
