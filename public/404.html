@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <meta name="color-scheme" content="light dark" />
+    <title>404 — ZongRui</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        background: #f2f2f2;
+        color: #1e1e1e;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        background:
+          linear-gradient(135deg, transparent 65%, rgb(28 74 138 / 12%) 65%),
+          #f2f2f2;
+      }
+
+      main {
+        width: min(38rem, calc(100% - 3rem));
+        border-top: 0.45rem solid #d7195c;
+        padding: 2.25rem 0;
+      }
+
+      p {
+        margin: 0 0 0.75rem;
+        color: #d7195c;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(3.5rem, 18vw, 8rem);
+        line-height: 0.9;
+      }
+
+      a {
+        display: inline-block;
+        margin-top: 2rem;
+        border-radius: 999px;
+        padding: 0.8rem 1.25rem;
+        background: #1e1e1e;
+        color: #fff;
+        font-weight: 800;
+        text-decoration: none;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root,
+        body {
+          background-color: #191919;
+          color: #f7f7f7;
+        }
+
+        a {
+          background: #f7f7f7;
+          color: #191919;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p>404 / NOT FOUND</p>
+      <h1>这里没有。</h1>
+      <a href="/">回到首页</a>
+    </main>
+  </body>
+</html>
