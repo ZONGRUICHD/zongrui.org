@@ -151,3 +151,22 @@ class AuditLog(Base):
     entity_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     details_json: Mapped[str] = mapped_column(Text, default="{}")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, index=True)
+
+
+class SiteVisitor(Base):
+    __tablename__ = "site_visitors"
+
+    # This is a keyed HMAC of the visitor address. The source address and user
+    # agent are deliberately never persisted.
+    visitor_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+
+
+class ArticleReader(Base):
+    __tablename__ = "article_readers"
+
+    article_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("articles.id", ondelete="CASCADE"), primary_key=True
+    )
+    # Article digests use an article-specific HMAC context, so they cannot be
+    # joined to the site-wide digest or to readers of a different article.
+    visitor_hash: Mapped[str] = mapped_column(String(64), primary_key=True)

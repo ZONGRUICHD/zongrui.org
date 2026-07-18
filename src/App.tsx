@@ -5,6 +5,7 @@ import { formatArticleDate } from './articles/pageMeta'
 import type { PublicArticleSummary } from './articles/types'
 import { ActivityWalls } from './components/ActivityWalls'
 import { Arrow, SitePage } from './components/SiteChrome'
+import { SiteVisitorCounter } from './components/SiteVisitorCounter'
 
 type FeatureBandProps = {
   eyebrow: string
@@ -482,6 +483,7 @@ function App() {
         <RecentWritingSection hasRobomasterLog={articleTags.has('robomaster')} />
         <ActivityWalls />
         <ContactSection />
+        <SiteVisitorCounter visible />
       </main>
     </SitePage>
   )

@@ -734,7 +734,6 @@ async function handleArticlePage(request, env, ctx) {
   const updatedAt = articleField(article, 'updatedAt', 'updated_at', publishedAt)
   const writingMode = articleField(article, 'writingMode', 'writing_mode', 'horizontal')
   const articleLanguage = writingMode === 'vertical-rl' ? 'zh-Hant' : 'zh-CN'
-
   return transformShell(request, env, {
     title: `${title} — ZongRui`,
     description: summary,

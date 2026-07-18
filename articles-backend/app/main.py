@@ -12,7 +12,7 @@ from starlette.requests import Request
 from . import __version__
 from .config import get_settings
 from .media import ensure_media_backup_lock, safe_media_path
-from .routers import admin, auth, public
+from .routers import admin, auth, public, stats
 
 HSTS_HEADER = "max-age=31536000"
 
@@ -55,7 +55,14 @@ class ResponsePolicyMiddleware(BaseHTTPMiddleware):
         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
         response.headers.setdefault("X-Frame-Options", "DENY")
         response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
-        if request.method != "GET" or "/admin/" in path or "/auth/" in path or path.endswith("/comments"):
+        if (
+            request.method != "GET"
+            or "/admin/" in path
+            or "/auth/" in path
+            or path.endswith("/comments")
+            or path.endswith("/stats")
+            or "/stats/" in path
+        ):
             response.headers.setdefault("Cache-Control", "no-store")
         elif path.startswith("/api/articles/v1/articles") or path in {
             "/api/articles/v1/tags",
@@ -153,11 +160,13 @@ app.add_middleware(ResponsePolicyMiddleware)
 app.include_router(public.router, prefix="/api/articles/v1")
 app.include_router(auth.router, prefix="/api/articles/v1")
 app.include_router(admin.router, prefix="/api/articles/v1")
+app.include_router(stats.router, prefix="/api/articles/v1")
 # Pages strips the public `/api/articles` prefix before forwarding. Keeping the
 # internal `/v1` aliases also makes local Pages emulation match production.
 app.include_router(public.router, prefix="/v1", include_in_schema=False)
 app.include_router(auth.router, prefix="/v1", include_in_schema=False)
 app.include_router(admin.router, prefix="/v1", include_in_schema=False)
+app.include_router(stats.router, prefix="/v1", include_in_schema=False)
 
 
 @app.get("/health")

@@ -53,6 +53,7 @@ def test_explicit_github_exchange_relay_requires_origin_secret() -> None:
         github_exchange_relay_url="https://zongrui.org/api/articles/_oauth/github/exchange",
         admin_github_user_id=12345,
         rate_limit_secret="r" * 32,
+        statistics_secret="t" * 32,
         turnstile_bypass=True,
         origin_shared_secret="",
     )

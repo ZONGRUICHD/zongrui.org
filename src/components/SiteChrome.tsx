@@ -159,7 +159,7 @@ export function SiteFooter() {
         </div>
         <div className="footer-meta">
           <span>© {new Date().getFullYear()} ZongRui</span>
-          <span>No ads. No behavior tracking. Security cookies only.</span>
+          <span>No ads. No cross-site tracking. Privacy-preserving network counters.</span>
           <span>
             Typography: JetBrains Mono · HarmonyOS Sans SC ·{' '}
             <a href="/assets/HarmonyOS-Sans-LICENSE.txt">License</a>
@@ -179,7 +179,13 @@ export function SiteFooter() {
   )
 }
 
-export function SitePage({ children, compactHeader = false }: { children: ReactNode; compactHeader?: boolean }) {
+export function SitePage({
+  children,
+  compactHeader = false,
+}: {
+  children: ReactNode
+  compactHeader?: boolean
+}) {
   return (
     <>
       <a className="skip-link" href="#main-content">跳到主要内容</a>

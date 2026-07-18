@@ -11,6 +11,7 @@ import type {
   PublicArticle,
   PublicArticleSummary,
   Tag,
+  VisitorStats,
 } from './types'
 
 const API_BASE = '/api/articles/v1'
@@ -85,6 +86,14 @@ export const articleApi = {
 
   tags() {
     return request<{ items: Tag[] }>('/tags')
+  },
+
+  recordSiteVisit() {
+    return request<VisitorStats>('/stats/site', { method: 'POST' })
+  },
+
+  recordArticleView(slug: string) {
+    return request<VisitorStats>(`/stats/articles/${encodeURIComponent(slug)}`, { method: 'POST' })
   },
 
   comments(slug: string, cursor?: string) {

@@ -149,6 +149,12 @@ class CommentStatusAction(ApiModel):
     status: Literal["visible", "hidden", "deleted"]
 
 
+class VisitorStats(ApiModel):
+    uniqueVisitors: int
+    counted: bool
+    since: datetime | None
+
+
 class MediaOut(ApiModel):
     id: str
     url: str

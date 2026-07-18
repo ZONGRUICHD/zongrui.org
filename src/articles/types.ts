@@ -24,6 +24,12 @@ export type PublicArticle = PublicArticleSummary & {
   contentHtml: string
 }
 
+export type VisitorStats = {
+  uniqueVisitors: number
+  counted: boolean
+  since: string | null
+}
+
 export type TiptapDocument = {
   type: 'doc'
   content?: Array<Record<string, unknown>>
