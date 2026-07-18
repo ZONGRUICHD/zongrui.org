@@ -157,7 +157,7 @@ export function SiteFooter() {
           <a href="https://t.me/zongruichd" target="_blank" rel="noreferrer">Telegram</a>
           <a href="https://x.com/zongruichd" target="_blank" rel="noreferrer">X</a>
         </div>
-        <div className="footer-meta">
+        <div className="footer-meta" data-privacy="network-counter">
           <span>© {new Date().getFullYear()} ZongRui</span>
           <span>No ads. No cross-site tracking. Privacy-preserving network counters.</span>
           <span>
