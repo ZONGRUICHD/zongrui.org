@@ -6,7 +6,7 @@ import hmac
 import ipaddress
 import secrets
 from datetime import datetime, timedelta, timezone
-from urllib.parse import urlencode, urlparse
+from urllib.parse import unquote, urlencode, urlparse, urlsplit
 
 import httpx
 from fastapi import Cookie, Depends, Header, HTTPException, Request, status
@@ -34,10 +34,45 @@ def ensure_aware(value: datetime) -> datetime:
     return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
 
 
+DEFAULT_CONSOLE_PATH = "/console"
+_CONSOLE_PATH_PREFIXES = (DEFAULT_CONSOLE_PATH, "/articles/console")
+
+
 def safe_return_to(value: str | None) -> str:
-    if value and value.startswith("/articles/console") and not value.startswith("//") and "\r" not in value and "\n" not in value:
-        return value[:255]
-    return "/articles/console"
+    """Keep OAuth redirects on a known Console route on this origin.
+
+    The old ``/articles/console`` namespace remains accepted while bookmarks
+    and in-flight OAuth states migrate to the unified ``/console``. Validation
+    is deliberately stricter than a prefix check because browsers normalize
+    dot segments and encoded control characters before navigation.
+    """
+
+    if not value or len(value) > 255 or value.startswith("//") or "\\" in value:
+        return DEFAULT_CONSOLE_PATH
+
+    decoded = value
+    for _ in range(3):
+        next_decoded = unquote(decoded)
+        if next_decoded == decoded:
+            break
+        decoded = next_decoded
+
+    if "\\" in decoded or decoded.startswith("//"):
+        return DEFAULT_CONSOLE_PATH
+    if any(ord(character) < 32 or ord(character) == 127 for character in decoded):
+        return DEFAULT_CONSOLE_PATH
+
+    parsed = urlsplit(decoded)
+    if parsed.scheme or parsed.netloc or not parsed.path.startswith("/"):
+        return DEFAULT_CONSOLE_PATH
+    if any(segment in {".", ".."} for segment in parsed.path.split("/")):
+        return DEFAULT_CONSOLE_PATH
+
+    allowed = any(
+        parsed.path == prefix or parsed.path.startswith(f"{prefix}/")
+        for prefix in _CONSOLE_PATH_PREFIXES
+    )
+    return value if allowed else DEFAULT_CONSOLE_PATH
 
 
 def create_oauth_state(db: Session, return_to: str) -> str:

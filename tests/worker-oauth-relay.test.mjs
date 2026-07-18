@@ -10,6 +10,69 @@ const secret = 's'.repeat(32)
 const env = { ARTICLES_ORIGIN_SHARED_SECRET: secret }
 const ctx = { waitUntil() {} }
 
+function installTestHtmlRewriter() {
+  const previous = globalThis.HTMLRewriter
+
+  class TestHtmlRewriter {
+    handlers = []
+
+    on(selector, handler) {
+      this.handlers.push([selector, handler])
+      return this
+    }
+
+    transform(response) {
+      const handlers = this.handlers
+      const body = new ReadableStream({
+        async start(controller) {
+          let html = await response.text()
+          for (const [selector, handler] of handlers) {
+            if (!['title', 'meta[name="robots"]', 'link[rel="canonical"]'].includes(selector)) continue
+            const element = {
+              setInnerContent(value) {
+                if (selector === 'title') html = html.replace(/<title>.*?<\/title>/s, `<title>${value}</title>`)
+              },
+              setAttribute(name, value) {
+                if (selector === 'meta[name="robots"]' && name === 'content') {
+                  html = html.replace(/(<meta\s+name="robots"\s+content=")[^"]*("\s*\/?>)/i, `$1${value}$2`)
+                }
+                if (selector === 'link[rel="canonical"]' && name === 'href') {
+                  html = html.replace(/(<link\s+rel="canonical"\s+href=")[^"]*("\s*\/?>)/i, `$1${value}$2`)
+                }
+              },
+            }
+            handler.element(element)
+          }
+          controller.enqueue(new TextEncoder().encode(html))
+          controller.close()
+        },
+      })
+      return new Response(body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+      })
+    }
+  }
+
+  globalThis.HTMLRewriter = TestHtmlRewriter
+  return () => {
+    if (previous === undefined) delete globalThis.HTMLRewriter
+    else globalThis.HTMLRewriter = previous
+  }
+}
+
+function shellEnv() {
+  return {
+    ASSETS: {
+      fetch: async () => new Response(
+        '<!doctype html><html><head><meta name="robots" content="index, follow"><link rel="canonical" href="https://zongrui.org/"><title>ZongRui</title></head><body><div id="root"></div></body></html>',
+        { headers: { 'Content-Type': 'text/html; charset=utf-8' } },
+      ),
+    },
+  }
+}
+
 function relayRequest(overrides = {}, suppliedSecret = secret) {
   return new Request(endpoint, {
     method: 'POST',
@@ -158,6 +221,129 @@ test('Pages adapter forwards asset requests through the ASSETS binding', async (
   assert.deepEqual(requestedUrls, ['https://zongrui.org/theme-init.js'])
 })
 
+test('legacy article console URLs permanently redirect to the unified console and preserve the query', async () => {
+  const cases = [
+    ['/articles/console?from=mobile', '/console/articles?from=mobile'],
+    ['/articles/console/new?draft=1', '/console/articles/new?draft=1'],
+    ['/articles/console/edit/42?revision=3', '/console/articles/edit/42?revision=3'],
+    ['/articles/console/comments?status=hidden', '/console/comments?status=hidden'],
+  ]
+
+  for (const [legacyPath, expectedPath] of cases) {
+    const response = await worker.fetch(new Request(`https://zongrui.org${legacyPath}`), {}, ctx)
+    assert.equal(response.status, 308)
+    assert.equal(response.headers.get('Location'), `https://zongrui.org${expectedPath}`)
+    assert.equal(response.headers.get('Cache-Control'), 'private, no-store')
+    assert.match(response.headers.get('X-Robots-Tag') ?? '', /noindex/)
+  }
+})
+
+test('unified console deep links return a private noindex SPA shell', async () => {
+  const restore = installTestHtmlRewriter()
+  try {
+    const response = await worker.fetch(
+      new Request('https://zongrui.org/console/gallery'),
+      shellEnv(),
+      ctx,
+    )
+    const html = await response.text()
+    assert.equal(response.status, 200)
+    assert.equal(response.headers.get('Cache-Control'), 'private, no-store')
+    assert.match(response.headers.get('X-Robots-Tag') ?? '', /noindex/)
+    assert.match(html, /<title>Console — ZongRui<\/title>/)
+    assert.match(html, /name="robots" content="noindex, nofollow, noarchive"/)
+  } finally {
+    restore()
+  }
+})
+
+test('project and gallery deep links receive route-specific canonical metadata', async () => {
+  const restore = installTestHtmlRewriter()
+  try {
+    const cases = [
+      ['/projects', '技术作品 — ZongRui', 'https://zongrui.org/projects'],
+      ['/projects/rm-robot-rust', 'RM Robot Rust Control Framework — ZongRui', 'https://zongrui.org/projects/rm-robot-rust'],
+      ['/gallery/', '图片 — ZongRui', 'https://zongrui.org/gallery'],
+    ]
+    for (const [path, title, canonical] of cases) {
+      const response = await worker.fetch(new Request(`https://zongrui.org${path}`), shellEnv(), ctx)
+      const html = await response.text()
+      assert.equal(response.status, 200)
+      assert.match(response.headers.get('Cache-Control') ?? '', /s-maxage=300/)
+      assert.match(html, new RegExp(`<title>${title}</title>`))
+      assert.match(html, new RegExp(`rel="canonical" href="${canonical}"`))
+    }
+  } finally {
+    restore()
+  }
+})
+
+test('unknown project and nested gallery paths return true noindex 404 shells', async () => {
+  const restore = installTestHtmlRewriter()
+  try {
+    for (const path of ['/projects/not-a-project', '/gallery/not-a-photo']) {
+      const response = await worker.fetch(new Request(`https://zongrui.org${path}`), shellEnv(), ctx)
+      const html = await response.text()
+      assert.equal(response.status, 404)
+      assert.equal(response.headers.get('Cache-Control'), 'no-store')
+      assert.match(response.headers.get('X-Robots-Tag') ?? '', /noindex/)
+      assert.match(html, /页面不存在 — ZongRui/)
+    }
+  } finally {
+    restore()
+  }
+})
+
+test('dynamic sitemap includes every public static route without indexing console pages', async () => {
+  const originalFetch = globalThis.fetch
+  const originalCaches = globalThis.caches
+  const stored = new Map()
+  const pending = []
+  globalThis.caches = {
+    default: {
+      async match(request) {
+        return stored.get(new Request(request).url)?.clone()
+      },
+      async put(request, response) {
+        stored.set(new Request(request).url, response.clone())
+      },
+    },
+  }
+  globalThis.fetch = async (input) => {
+    assert.equal(new Request(input).url, 'http://127.0.0.1:18232/v1/sitemap.xml')
+    return new Response(
+      '<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://zongrui.org/articles/example</loc></url></urlset>',
+      { headers: { 'Content-Type': 'application/xml' } },
+    )
+  }
+
+  try {
+    const response = await worker.fetch(
+      new Request('https://zongrui.org/sitemap.xml'),
+      { ARTICLES_ORIGIN_URL: 'http://127.0.0.1:18232' },
+      { waitUntil(promise) { pending.push(promise) } },
+    )
+    const xml = await response.text()
+    assert.equal(response.status, 200)
+    for (const path of [
+      '/',
+      '/articles',
+      '/projects',
+      '/projects/rm-robot-rust',
+      '/projects/arista-switch-dashboard',
+      '/gallery',
+    ]) {
+      assert.match(xml, new RegExp(`<loc>https://zongrui\\.org${path.replaceAll('/', '\\/')}</loc>`))
+    }
+    assert.doesNotMatch(xml, /\/console/)
+    await Promise.all(pending)
+  } finally {
+    globalThis.fetch = originalFetch
+    if (originalCaches === undefined) delete globalThis.caches
+    else globalThis.caches = originalCaches
+  }
+})
+
 test('public article lists with query parameters use the edge cache', async () => {
   const originalFetch = globalThis.fetch
   const originalCaches = globalThis.caches
@@ -200,6 +386,51 @@ test('public article lists with query parameters use the edge cache', async () =
     assert.equal(hit.headers.get('X-ZR-Edge-Cache'), 'HIT')
     assert.equal(originCalls, 1)
     assert.deepEqual(await hit.json(), { items: [{ slug: 'cached-post' }] })
+  } finally {
+    globalThis.fetch = originalFetch
+    if (originalCaches === undefined) delete globalThis.caches
+    else globalThis.caches = originalCaches
+  }
+})
+
+test('public gallery pages use the same stale-capable edge cache', async () => {
+  const originalFetch = globalThis.fetch
+  const originalCaches = globalThis.caches
+  const stored = new Map()
+  const pending = []
+  let originCalls = 0
+
+  globalThis.caches = {
+    default: {
+      async match(request) {
+        return stored.get(new Request(request).url)?.clone()
+      },
+      async put(request, response) {
+        stored.set(new Request(request).url, response.clone())
+      },
+    },
+  }
+  globalThis.fetch = async (input) => {
+    originCalls += 1
+    assert.equal(new Request(input).url, 'http://127.0.0.1:18232/v1/gallery?limit=24')
+    return Response.json({ items: [{ id: 'photo-1' }], nextCursor: null })
+  }
+
+  const cacheCtx = { waitUntil(promise) { pending.push(promise) } }
+  const request = new Request('https://zongrui.org/api/articles/v1/gallery?limit=24')
+  const cacheEnv = { ARTICLES_ORIGIN_URL: 'http://127.0.0.1:18232' }
+
+  try {
+    const miss = await worker.fetch(request, cacheEnv, cacheCtx)
+    assert.equal(miss.status, 200)
+    assert.equal(miss.headers.get('X-ZR-Edge-Cache'), 'MISS')
+    assert.match(miss.headers.get('Cache-Control') ?? '', /s-maxage=60/)
+    await Promise.all(pending.splice(0))
+
+    const hit = await worker.fetch(request, cacheEnv, cacheCtx)
+    assert.equal(hit.headers.get('X-ZR-Edge-Cache'), 'HIT')
+    assert.equal(originCalls, 1)
+    assert.deepEqual(await hit.json(), { items: [{ id: 'photo-1' }], nextCursor: null })
   } finally {
     globalThis.fetch = originalFetch
     if (originalCaches === undefined) delete globalThis.caches

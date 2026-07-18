@@ -195,6 +195,100 @@ class PaginatedMedia(ApiModel):
     nextCursor: str | None
 
 
+class GalleryImageOut(ApiModel):
+    id: str
+    url: str
+    title: str
+    caption: str
+    alt: str
+    order: int
+    width: int
+    height: int
+    publishedAt: datetime
+
+
+class AdminGalleryImageOut(GalleryImageOut):
+    mediaId: str
+    status: Literal["draft", "published", "archived"]
+    publishedAt: datetime | None
+    archivedAt: datetime | None
+    createdAt: datetime
+    updatedAt: datetime
+
+
+class GalleryImageCreate(ApiModel):
+    mediaId: str = Field(min_length=1, max_length=36)
+    title: str = Field(default="", max_length=200)
+    caption: str = Field(default="", max_length=2000)
+    alt: str = Field(min_length=1, max_length=300)
+    order: int | None = Field(default=None, ge=0, le=1_000_000)
+
+    @field_validator("title", "caption", "alt")
+    @classmethod
+    def clean_gallery_text(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("alt")
+    @classmethod
+    def require_gallery_alt(cls, value: str) -> str:
+        if not value:
+            raise ValueError("alt must not be blank")
+        return value
+
+
+class GalleryImagePatch(ApiModel):
+    mediaId: str | None = Field(default=None, min_length=1, max_length=36)
+    title: str | None = Field(default=None, max_length=200)
+    caption: str | None = Field(default=None, max_length=2000)
+    alt: str | None = Field(default=None, min_length=1, max_length=300)
+    order: int | None = Field(default=None, ge=0, le=1_000_000)
+
+    @field_validator("title", "caption", "alt")
+    @classmethod
+    def clean_optional_gallery_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return value.strip()
+
+    @field_validator("alt")
+    @classmethod
+    def require_optional_gallery_alt(cls, value: str | None) -> str | None:
+        if value == "":
+            raise ValueError("alt must not be blank")
+        return value
+
+
+class GalleryReorder(ApiModel):
+    orderedIds: list[str] = Field(min_length=1, max_length=500)
+
+    @field_validator("orderedIds")
+    @classmethod
+    def unique_gallery_ids(cls, values: list[str]) -> list[str]:
+        if any(not value or len(value) > 36 for value in values):
+            raise ValueError("orderedIds contains an invalid id")
+        if len(set(values)) != len(values):
+            raise ValueError("orderedIds must not contain duplicates")
+        return values
+
+
+class GalleryEnvelope(ApiModel):
+    image: AdminGalleryImageOut
+
+
+class PaginatedGallery(ApiModel):
+    items: list[GalleryImageOut]
+    nextCursor: str | None
+
+
+class PaginatedAdminGallery(ApiModel):
+    items: list[AdminGalleryImageOut]
+    nextCursor: str | None
+
+
+class GalleryItems(ApiModel):
+    items: list[AdminGalleryImageOut]
+
+
 class RevisionList(ApiModel):
     items: list[RevisionOut]
 

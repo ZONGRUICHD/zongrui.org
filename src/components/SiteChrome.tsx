@@ -1,8 +1,8 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ThemeSwitcher } from './ThemeSwitcher'
 
-const HOME_SECTIONS = ['activity', 'work', 'web', 'contact'] as const
+const HOME_SECTIONS = ['top', 'articles', 'web', 'contact'] as const
 type HomeSection = (typeof HOME_SECTIONS)[number]
 
 export function Arrow() {
@@ -24,6 +24,7 @@ type SiteHeaderProps = {
 export function SiteHeader({ compact = false }: SiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [activeSection, setActiveSection] = useState<HomeSection | ''>('')
+  const menuButtonRef = useRef<HTMLButtonElement>(null)
   const location = useLocation()
 
   useEffect(() => {
@@ -32,12 +33,15 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMenuOpen(false)
+      if (event.key === 'Escape' && menuOpen) {
+        setMenuOpen(false)
+        window.requestAnimationFrame(() => menuButtonRef.current?.focus())
+      }
     }
 
     window.addEventListener('keydown', handleEscape)
     return () => window.removeEventListener('keydown', handleEscape)
-  }, [])
+  }, [menuOpen])
 
   useEffect(() => {
     if (location.pathname !== '/') {
@@ -79,6 +83,9 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
   }, [location.pathname])
 
   const articlePageActive = location.pathname.startsWith('/articles')
+    || (location.pathname === '/' && activeSection === 'articles')
+  const galleryPageActive = location.pathname.startsWith('/gallery')
+  const projectsPageActive = location.pathname.startsWith('/projects')
   const homeSectionProps = (section: HomeSection) => {
     const active = location.pathname === '/' && activeSection === section
     return {
@@ -104,6 +111,7 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
           </a>
         </div>
         <button
+          ref={menuButtonRef}
           className="menu-button"
           type="button"
           aria-expanded={menuOpen}
@@ -120,16 +128,17 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
       <nav id="site-navigation" className={`site-nav${menuOpen ? ' is-open' : ''}`} aria-label="主导航">
         <div className="site-nav__inner">
           <div className="site-nav__modes">
-            <a href="/#work" {...homeSectionProps('work')}>技术作品</a>
-            <a href="/#web" {...homeSectionProps('web')}>网页与故事</a>
             <Link className={articlePageActive ? 'is-active' : undefined} to="/articles" aria-current={articlePageActive ? 'page' : undefined}>
               文章
             </Link>
-            <a href="/#activity" {...homeSectionProps('activity')}>活动墙</a>
+            <a href="/#web" {...homeSectionProps('web')}>网页与故事</a>
             <a href="/#contact" {...homeSectionProps('contact')}>联系方式</a>
-          </div>
-          <div className="site-nav__links">
-            <a href="/#work">作品</a>
+            <Link className={galleryPageActive ? 'is-active' : undefined} to="/gallery" aria-current={galleryPageActive ? 'page' : undefined}>
+              图片
+            </Link>
+            <Link className={projectsPageActive ? 'is-active' : undefined} to="/projects" aria-current={projectsPageActive ? 'page' : undefined}>
+              技术作品
+            </Link>
           </div>
         </div>
       </nav>
@@ -149,6 +158,9 @@ export function SiteFooter() {
           </div>
         </div>
         <div className="footer-links">
+          <Link to="/articles">文章</Link>
+          <Link to="/gallery">图片</Link>
+          <Link to="/projects">技术作品</Link>
           <a href="https://github.com/zongruichd" target="_blank" rel="noreferrer">GitHub</a>
           <a href="https://zongtech.xyz" target="_blank" rel="noreferrer">ZongTech</a>
           <a href="https://2022314.xyz" target="_blank" rel="noreferrer">2022314</a>

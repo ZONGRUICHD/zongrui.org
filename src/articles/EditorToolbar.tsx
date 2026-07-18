@@ -150,25 +150,25 @@ export function EditorToolbar({ editor }: { editor: Editor | null }) {
         <ToolButton label="↷" title="重做" disabled={!editor.can().chain().focus().redo().run()} onClick={() => editor.chain().focus().redo().run()} />
       </div>
 
-      <dialog className="media-dialog" ref={dialogRef} onClose={() => setError('')}>
+      <dialog className="media-dialog" ref={dialogRef} aria-labelledby="media-dialog-title" onClose={() => setError('')}>
         <form method="dialog" onSubmit={(event) => { event.preventDefault(); void saveImage() }}>
-          <header><div><p className="articles-kicker">MEDIA</p><h2>{editingImage ? '编辑图片' : '插入图片'}</h2></div><button type="button" aria-label="关闭" onClick={() => dialogRef.current?.close()}>×</button></header>
+          <header><div><p className="articles-kicker">MEDIA</p><h2 id="media-dialog-title">{editingImage ? '编辑图片' : '插入图片'}</h2></div><button type="button" aria-label="关闭" onClick={() => dialogRef.current?.close()}>×</button></header>
 
-          <div className="media-dialog__tabs" role="tablist" aria-label="图片来源">
-            <button type="button" role="tab" aria-selected={tab === 'upload'} onClick={() => setTab('upload')}>上传新图</button>
-            <button type="button" role="tab" aria-selected={tab === 'library'} onClick={() => setTab('library')}>媒体库</button>
+          <div className="media-dialog__tabs" role="group" aria-label="图片来源">
+            <button type="button" aria-pressed={tab === 'upload'} onClick={() => setTab('upload')}>上传新图</button>
+            <button type="button" aria-pressed={tab === 'library'} onClick={() => setTab('library')}>媒体库</button>
           </div>
 
           {tab === 'upload' ? (
-            <div className="media-dialog__source" role="tabpanel">
+            <div className="media-dialog__source">
               <label>图片文件<input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setFile(event.target.files?.[0] ?? null)} /></label>
               <p>JPEG / PNG / WebP，最大 10 MiB。服务器会统一转换为 WebP。</p>
             </div>
           ) : (
-            <div className="media-dialog__source" role="tabpanel">
+            <div className="media-dialog__source">
               <div className="media-library" aria-busy={loadingMedia}>
                 {mediaItems.map((media) => (
-                  <button className="media-library__item" type="button" key={media.id} aria-pressed={imageSrc === media.url} onClick={() => chooseMedia(media)}>
+                  <button className="media-library__item" type="button" key={media.id} aria-label={`选择图片 ${media.id.slice(0, 8)}，${media.width} × ${media.height}`} aria-pressed={imageSrc === media.url} onClick={() => chooseMedia(media)}>
                     <img src={media.url} alt="" loading="lazy" />
                     <span>{media.width} × {media.height}</span>
                   </button>

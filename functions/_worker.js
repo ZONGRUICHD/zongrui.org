@@ -7,6 +7,16 @@ const STALE_CACHE_TTL_SECONDS = 7 * 24 * 60 * 60
 const CACHE_GENERATION_TTL_SECONDS = 365 * 24 * 60 * 60
 const PUBLIC_CACHE_GENERATION_PATH = '/.zr-cache/articles-generation'
 const PUBLIC_HTML_CACHE_CONTROL = `public, max-age=0, s-maxage=${PUBLIC_CACHE_TTL_SECONDS}, stale-while-revalidate=${STALE_CACHE_TTL_SECONDS}, stale-if-error=${STALE_CACHE_TTL_SECONDS}`
+const CONSOLE_ROBOTS_POLICY = 'noindex, nofollow, noarchive'
+const CONSOLE_CACHE_CONTROL = 'private, no-store'
+const PUBLIC_STATIC_SITEMAP_PATHS = [
+  '/',
+  '/articles',
+  '/projects',
+  '/projects/rm-robot-rust',
+  '/projects/arista-switch-dashboard',
+  '/gallery',
+]
 
 const BLOCKED_FORWARD_HEADERS = [
   'cf-access-client-id',
@@ -378,6 +388,7 @@ function isPublicCacheableApi(request) {
   return (
     path === '/v1/articles'
     || path.startsWith('/v1/articles/')
+    || path === '/v1/gallery'
     || path === '/v1/tags'
     || path === '/v1/rss.xml'
     || path === '/v1/sitemap.xml'
@@ -657,16 +668,6 @@ async function handleArticlePage(request, env, ctx) {
     return proxyArticlesApi(apiRequest, env, ctx)
   }
 
-  if (remainder === 'console' || remainder.startsWith('console/')) {
-    return transformShell(request, env, {
-      title: 'Articles Console — ZongRui',
-      description: 'ZongRui Articles 管理界面。',
-      canonical: `${PUBLIC_SITE_ORIGIN}${url.pathname}`,
-      robots: 'noindex, nofollow, noarchive',
-      cacheControl: 'private, no-store',
-    })
-  }
-
   if (remainder.includes('/')) {
     return transformShell(request, env, {
       title: '页面不存在 — ZongRui',
@@ -783,6 +784,88 @@ async function handleArticlePage(request, env, ctx) {
   })
 }
 
+function legacyConsoleRedirect(request) {
+  const url = new URL(request.url)
+  const suffix = url.pathname.slice('/articles/console'.length)
+  let pathname
+
+  if (!suffix || suffix === '/') pathname = '/console/articles'
+  else if (suffix === '/comments' || suffix.startsWith('/comments/')) pathname = `/console${suffix}`
+  else pathname = `/console/articles${suffix}`
+
+  url.pathname = pathname
+  return new Response(null, {
+    status: 308,
+    headers: {
+      'Cache-Control': CONSOLE_CACHE_CONTROL,
+      Location: url.toString(),
+      'X-Robots-Tag': CONSOLE_ROBOTS_POLICY,
+    },
+  })
+}
+
+async function handleConsolePage(request, env) {
+  const url = new URL(request.url)
+  return transformShell(request, env, {
+    title: 'Console — ZongRui',
+    description: 'ZongRui 的文章、图片与站点内容管理界面。',
+    canonical: `${PUBLIC_SITE_ORIGIN}${url.pathname}`,
+    robots: CONSOLE_ROBOTS_POLICY,
+    cacheControl: CONSOLE_CACHE_CONTROL,
+  })
+}
+
+function normalizedPublicPath(pathname) {
+  return pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname
+}
+
+async function handlePublicSpaPage(request, env) {
+  const url = new URL(request.url)
+  const pathname = normalizedPublicPath(url.pathname)
+  const projectSlug = pathname.startsWith('/projects/') ? pathname.slice('/projects/'.length) : ''
+  const projectMetadata = {
+    'rm-robot-rust': {
+      title: 'RM Robot Rust Control Framework — ZongRui',
+      description: '面向 RoboMaster 的 Rust 整车控制框架：项目思路、技术栈与实现记录。',
+    },
+    'arista-switch-dashboard': {
+      title: 'Arista Switch Web Dashboard — ZongRui',
+      description: 'Arista EOS 交换机本机 Web 管理界面：项目思路、技术栈与实现记录。',
+    },
+  }
+
+  const unknownProject = projectSlug && !projectMetadata[projectSlug]
+  const unknownGalleryPath = pathname.startsWith('/gallery/')
+  if (unknownProject || unknownGalleryPath) {
+    return transformShell(request, env, {
+      title: '页面不存在 — ZongRui',
+      description: '这个地址没有对应的公开页面。',
+      canonical: `${PUBLIC_SITE_ORIGIN}${pathname}`,
+      robots: 'noindex, nofollow',
+      cacheControl: 'no-store',
+      status: 404,
+    })
+  }
+
+  let title = '技术作品 — ZongRui'
+  let description = 'ZongRui 的技术项目档案，记录项目想法、技术栈与实现过程。'
+  if (pathname === '/gallery') {
+    title = '图片 — ZongRui'
+    description = 'ZongRui 公开整理的图片与影像记录。'
+  } else if (projectSlug) {
+    const metadata = projectMetadata[projectSlug]
+    title = metadata?.title ?? '项目档案 — ZongRui'
+    description = metadata?.description ?? 'ZongRui 的技术项目档案。'
+  }
+
+  return transformShell(request, env, {
+    title,
+    description,
+    canonical: `${PUBLIC_SITE_ORIGIN}${pathname}`,
+    ogType: 'website',
+  })
+}
+
 async function handleSitemap(request, env, ctx) {
   const url = new URL(request.url)
   const upstream = await proxyArticlesApi(
@@ -792,10 +875,13 @@ async function handleSitemap(request, env, ctx) {
   )
   if (upstream.ok) {
     const body = await upstream.text()
-    const homeEntry = `<url><loc>${PUBLIC_SITE_ORIGIN}/</loc></url>`
-    const sitemap = body.includes(`<loc>${PUBLIC_SITE_ORIGIN}/</loc>`)
-      ? body
-      : body.replace(/(<urlset\b[^>]*>)/, `$1${homeEntry}`)
+    const missingEntries = PUBLIC_STATIC_SITEMAP_PATHS
+      .filter((path) => !body.includes(`<loc>${PUBLIC_SITE_ORIGIN}${path}</loc>`))
+      .map((path) => `<url><loc>${PUBLIC_SITE_ORIGIN}${path}</loc></url>`)
+      .join('')
+    const sitemap = missingEntries
+      ? body.replace(/(<urlset\b[^>]*>)/, `$1${missingEntries}`)
+      : body
     const headers = new Headers(upstream.headers)
     headers.delete('Content-Encoding')
     headers.delete('Content-Length')
@@ -804,7 +890,7 @@ async function handleSitemap(request, env, ctx) {
   }
 
   return new Response(
-    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://zongrui.org/</loc></url><url><loc>https://zongrui.org/articles</loc></url></urlset>`,
+    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${PUBLIC_STATIC_SITEMAP_PATHS.map((path) => `<url><loc>${PUBLIC_SITE_ORIGIN}${path}</loc></url>`).join('')}</urlset>`,
     {
       status: 200,
       headers: {
@@ -854,8 +940,25 @@ export default {
       return proxyArticlesApi(request, env, ctx)
     }
 
+    if (url.pathname === '/articles/console' || url.pathname.startsWith('/articles/console/')) {
+      return legacyConsoleRedirect(request)
+    }
+
     if (url.pathname === '/articles' || url.pathname.startsWith('/articles/')) {
       return handleArticlePage(request, env, ctx)
+    }
+
+    if (url.pathname === '/console' || url.pathname.startsWith('/console/')) {
+      return handleConsolePage(request, env)
+    }
+
+    if (
+      url.pathname === '/projects'
+      || url.pathname.startsWith('/projects/')
+      || url.pathname === '/gallery'
+      || url.pathname.startsWith('/gallery/')
+    ) {
+      return handlePublicSpaPage(request, env)
     }
 
     if (url.pathname === '/sitemap.xml') {

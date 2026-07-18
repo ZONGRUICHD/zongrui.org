@@ -9,7 +9,13 @@ from fastapi.testclient import TestClient
 
 from app.config import get_settings
 from app.database import SessionLocal
-from app.security import consume_oauth_state, create_oauth_state, exchange_github_code, verify_turnstile
+from app.security import (
+    consume_oauth_state,
+    create_oauth_state,
+    exchange_github_code,
+    safe_return_to,
+    verify_turnstile,
+)
 
 
 class FakeResponse:
@@ -108,11 +114,52 @@ class FakeTurnstileClient:
 
 def test_oauth_state_is_single_use() -> None:
     with SessionLocal() as db:
-        raw = create_oauth_state(db, "/articles/console/edit/abc")
-        assert consume_oauth_state(db, raw) == "/articles/console/edit/abc"
+        raw = create_oauth_state(db, "/console/articles/edit/abc")
+        assert consume_oauth_state(db, raw) == "/console/articles/edit/abc"
         with pytest.raises(HTTPException) as caught:
             consume_oauth_state(db, raw)
         assert caught.value.status_code == 400
+
+
+@pytest.mark.parametrize(
+    "candidate",
+    (
+        "/console",
+        "/console/articles",
+        "/console/articles/edit/abc?panel=history#revision",
+        "/articles/console",
+        "/articles/console/edit/abc",
+    ),
+)
+def test_safe_return_to_accepts_unified_and_legacy_console_routes(candidate: str) -> None:
+    assert safe_return_to(candidate) == candidate
+
+
+@pytest.mark.parametrize(
+    "candidate",
+    (
+        None,
+        "",
+        "//attacker.example/console",
+        "https://attacker.example/console",
+        "/console.evil.example",
+        "/console-elsewhere",
+        "/articles/console-elsewhere",
+        "/console/../outside",
+        "/console/%2e%2e/outside",
+        "/console/%252e%252e/outside",
+        "/console\\outside",
+        "/console/%5c../outside",
+        "/console%0d%0aLocation:%20https://attacker.example",
+        "/outside",
+    ),
+)
+def test_safe_return_to_rejects_external_malformed_and_out_of_scope_routes(candidate: str | None) -> None:
+    assert safe_return_to(candidate) == "/console"
+
+
+def test_safe_return_to_rejects_paths_too_long_for_oauth_state() -> None:
+    assert safe_return_to(f"/console/{'a' * 255}") == "/console"
 
 
 def test_github_numeric_id_is_authoritative(monkeypatch: pytest.MonkeyPatch) -> None:

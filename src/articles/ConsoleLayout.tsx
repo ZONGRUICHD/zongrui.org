@@ -53,7 +53,7 @@ export function ConsoleGate({ children }: { children: ReactNode }) {
     setRetryKey((key) => key + 1)
   }
 
-  usePageMeta({ title: 'Articles Console — ZongRui', noIndex: true, language: 'zh-CN', ogLocale: 'zh_CN' })
+  usePageMeta({ title: 'Console — ZongRui', noIndex: true, language: 'zh-CN', ogLocale: 'zh_CN' })
 
   useEffect(() => {
     let active = true
@@ -87,8 +87,8 @@ export function ConsoleGate({ children }: { children: ReactNode }) {
       <main className="console-gate" id="main-content">
         <ThemeSwitcher className="console-gate__theme-switcher" />
         <img src="/avatar.jpg" alt="" />
-        <p className="articles-kicker">ZONGRUI ARTICLES / PRIVATE CONSOLE</p>
-        <h1>文章管理台</h1>
+        <p className="articles-kicker">ZONGRUI / PRIVATE CONSOLE</p>
+        <h1>网站管理台</h1>
         <p>只允许指定的 GitHub 账号进入。</p>
         {authError && <div className="console-gate__notice" role="alert"><strong>GitHub 登录未完成</strong><p>{authError}</p></div>}
         <button className="articles-primary-button" type="button" onClick={login}>GitHub 登录</button>
@@ -106,7 +106,7 @@ function ConsoleLayout({ session, children }: { session: AuthSession; children: 
     setLoggingOut(true)
     try {
       await articleApi.logout()
-      window.location.assign('/articles')
+      window.location.assign('/')
     } finally {
       setLoggingOut(false)
     }
@@ -115,12 +115,14 @@ function ConsoleLayout({ session, children }: { session: AuthSession; children: 
   return (
     <div className="console-app">
       <header className="console-header">
-        <Link className="console-brand" to="/articles/console"><img src="/avatar.jpg" alt="" /><span><strong>Articles Console</strong><small>ZongRui / Editor</small></span></Link>
+        <Link className="console-brand" to="/console"><img src="/avatar.jpg" alt="" /><span><strong>ZongRui Console</strong><small>Articles / Gallery</small></span></Link>
         <nav aria-label="Console 导航">
-          <NavLink end to="/articles/console">文章</NavLink>
-          <NavLink to="/articles/console/new">写文章</NavLink>
-          <NavLink to="/articles/console/comments">评论</NavLink>
-          <Link to="/articles" target="_blank">查看网站 ↗</Link>
+          <NavLink end to="/console">概览</NavLink>
+          <NavLink to="/console/articles">文章</NavLink>
+          <NavLink to="/console/articles/new">写文章</NavLink>
+          <NavLink to="/console/gallery">图片</NavLink>
+          <NavLink to="/console/comments">评论</NavLink>
+          <Link to="/" target="_blank">查看网站 ↗</Link>
         </nav>
         <ThemeSwitcher className="console-theme-switcher" />
         <div className="console-user">

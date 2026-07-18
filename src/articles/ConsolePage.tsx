@@ -51,7 +51,7 @@ export function ConsolePage() {
       <main className="console-main" id="main-content">
         <header className="console-page-heading">
           <div><p className="articles-kicker">CONTENT / {articles.length} ITEMS</p><h1>文章</h1></div>
-          <Link className="articles-primary-button" to="/articles/console/new">+  新文章</Link>
+          <Link className="articles-primary-button" to="/console/articles/new">+  新文章</Link>
         </header>
         <div className="console-status-tabs" role="group" aria-label="文章状态">
           {statuses.map((item) => (
@@ -63,13 +63,13 @@ export function ConsolePage() {
         <div className="console-article-list" aria-busy={loading}>
           {loading && <p>正在读取文章…</p>}
           {error && <p role="alert">{error}</p>}
-          {!loading && !error && articles.length === 0 && <div className="console-empty"><strong>这里还是空的。</strong><p>写第一篇文章，它会先保存为草稿。</p><Link to="/articles/console/new">开始写 →</Link></div>}
+          {!loading && !error && articles.length === 0 && <div className="console-empty"><strong>这里还是空的。</strong><p>写第一篇文章，它会先保存为草稿。</p><Link to="/console/articles/new">开始写 →</Link></div>}
           {articles.map((article) => (
             <article className="console-article-row" key={article.id}>
               <div className={`console-status console-status--${article.status}`}>{statusLabel[article.status]}</div>
-              <div><h2><Link to={`/articles/console/edit/${article.id}`}>{article.title || '无标题'}</Link></h2><p>{article.summary || '还没有摘要。'}</p></div>
+              <div><h2><Link to={`/console/articles/edit/${article.id}`}>{article.title || '无标题'}</Link></h2><p>{article.summary || '还没有摘要。'}</p></div>
               <div className="console-article-row__meta"><span>REV {article.revision}</span><time dateTime={article.updatedAt}>{formatArticleDate(article.updatedAt)}</time></div>
-              <Link className="console-edit-link" to={`/articles/console/edit/${article.id}`}>编辑 →</Link>
+              <Link className="console-edit-link" to={`/console/articles/edit/${article.id}`}>编辑 →</Link>
             </article>
           ))}
           {nextCursor && <button className="articles-secondary-button" type="button" onClick={() => void load(nextCursor)}>更多文章</button>}

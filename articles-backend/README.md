@@ -43,6 +43,9 @@ Public:
 - `GET /articles?q=&tag=&archive=&cursor=&limit=` → `{items,nextCursor}`.
 - `GET /articles/{slug}` → `{article}`; a historical slug returns a `308` to
   the new API URL.
+- `GET /gallery?cursor=&limit=` returns published gallery images in the
+  administrator-defined order. Each item includes the immutable WebP URL,
+  dimensions, title, caption, alt text, order, and publication timestamp.
 - `GET /tags` → `{items:[{name,slug,count}]}`.
 - `GET /articles/{slug}/comments?cursor=&limit=` → `{items,nextCursor}`.
 - `POST /articles/{slug}/comments` with
@@ -58,7 +61,7 @@ Public:
 
 Authentication:
 
-- `GET /auth/github/login?returnTo=/articles/console...` starts OAuth.
+- `GET /auth/github/login?returnTo=/console...` starts OAuth. Legacy `/articles/console...` return paths remain accepted during migration.
 - `GET /auth/github/callback` validates single-use state and the configured
   numeric GitHub user ID plus login.
 - `GET /auth/session` → `{authenticated,user?,turnstileSiteKey?}` and rotates
@@ -73,6 +76,17 @@ Admin (session required; every mutation also requires `X-CSRF-Token`):
 - `GET /admin/articles/{id}/revisions` and
   `POST /admin/articles/{id}/revisions/{revision}/restore`.
 - `GET|POST /admin/media`, `DELETE /admin/media/{id}`.
+- `GET|POST /admin/gallery`, `GET|PATCH|DELETE /admin/gallery/{id}`.
+- `POST /admin/gallery/upload` accepts a JPEG, PNG, or WebP plus gallery
+  metadata. It runs through the same verified image pipeline as `/admin/media`:
+  the original is never kept, metadata is removed, the longest edge is reduced
+  to 2000px, and the result is stored as a content-addressed WebP.
+- `POST /admin/gallery/reorder` with `{orderedIds:[...]}` moves the supplied
+  images to the front in that exact order and normalises all gallery order
+  values. `POST /admin/gallery/{id}/publish|archive` controls public visibility.
+  Deleting a gallery item leaves its reusable Media object intact; Media
+  deletion remains a separate guarded operation and is rejected while the
+  image is still used by either an article or the gallery.
 - `GET /admin/comments` and
   `POST /admin/comments/{id}/hide|restore|delete`.
 - `POST /admin/translate/traditional` with

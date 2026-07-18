@@ -232,7 +232,13 @@ function ActivityWall({
   }, [calendarSignature, dayCount])
 
   return (
-    <article className="activity-wall" data-tone={tone} aria-labelledby={`${tone}-wall-title`}>
+    <article
+      className="activity-wall"
+      data-tone={tone}
+      data-motion-wall
+      data-pointer-tilt
+      aria-labelledby={`${tone}-wall-title`}
+    >
       <header className="activity-wall__header">
         <div>
           <p>{kicker}</p>

@@ -13,7 +13,7 @@ from starlette.requests import Request
 from . import __version__
 from .config import get_settings
 from .media import ensure_media_backup_lock, safe_media_path
-from .routers import admin, auth, public, stats
+from .routers import admin, auth, gallery, public, stats
 
 HSTS_HEADER = "max-age=31536000"
 
@@ -89,8 +89,10 @@ class ResponsePolicyMiddleware(BaseHTTPMiddleware):
             response.headers.setdefault("Cache-Control", "no-store")
         elif path.startswith("/api/articles/v1/articles") or path in {
             "/api/articles/v1/tags",
+            "/api/articles/v1/gallery",
             "/api/articles/v1/rss.xml",
             "/api/articles/v1/sitemap.xml",
+            "/v1/gallery",
         }:
             max_age = get_settings().public_cache_seconds
             response.headers.setdefault(
@@ -112,7 +114,7 @@ class RequestBodyLimitMiddleware:
         path = scope.get("path", "")
         if scope["method"] == "POST" and path.endswith("/comments"):
             limit = settings.max_comment_body_bytes
-        elif scope["method"] == "POST" and path.endswith("/admin/media"):
+        elif scope["method"] == "POST" and path.endswith(("/admin/media", "/admin/gallery/upload")):
             limit = settings.max_upload_bytes + 1024 * 1024
         else:
             limit = settings.max_json_body_bytes
@@ -184,12 +186,16 @@ app.include_router(public.router, prefix="/api/articles/v1")
 app.include_router(auth.router, prefix="/api/articles/v1")
 app.include_router(admin.router, prefix="/api/articles/v1")
 app.include_router(stats.router, prefix="/api/articles/v1")
+app.include_router(gallery.public_router, prefix="/api/articles/v1")
+app.include_router(gallery.admin_router, prefix="/api/articles/v1")
 # Pages strips the public `/api/articles` prefix before forwarding. Keeping the
 # internal `/v1` aliases also makes local Pages emulation match production.
 app.include_router(public.router, prefix="/v1", include_in_schema=False)
 app.include_router(auth.router, prefix="/v1", include_in_schema=False)
 app.include_router(admin.router, prefix="/v1", include_in_schema=False)
 app.include_router(stats.router, prefix="/v1", include_in_schema=False)
+app.include_router(gallery.public_router, prefix="/v1", include_in_schema=False)
+app.include_router(gallery.admin_router, prefix="/v1", include_in_schema=False)
 
 
 @app.get("/health")
