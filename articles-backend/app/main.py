@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 import hmac
+import json
 from urllib.parse import urlparse
 
 from fastapi import FastAPI, HTTPException
@@ -15,6 +16,17 @@ from .media import ensure_media_backup_lock, safe_media_path
 from .routers import admin, auth, public, stats
 
 HSTS_HEADER = "max-age=31536000"
+
+
+def _is_insecure_cloudflare_request(request: Request) -> bool:
+    forwarded_proto = request.headers.get("x-forwarded-proto", "").split(",", 1)[0].strip().lower()
+    if forwarded_proto == "http":
+        return True
+    try:
+        visitor = json.loads(request.headers.get("cf-visitor", "{}"))
+    except (json.JSONDecodeError, TypeError):
+        return False
+    return isinstance(visitor, dict) and str(visitor.get("scheme", "")).lower() == "http"
 
 
 @asynccontextmanager
@@ -33,8 +45,7 @@ class ResponsePolicyMiddleware(BaseHTTPMiddleware):
         path = request.url.path
         media_host = urlparse(settings.media_public_base_url).hostname
         if host == media_host:
-            forwarded_proto = request.headers.get("x-forwarded-proto", "").split(",", 1)[0].strip().lower()
-            if forwarded_proto == "http":
+            if _is_insecure_cloudflare_request(request):
                 secure_url = request.url.replace(scheme="https", netloc=host)
                 return RedirectResponse(
                     str(secure_url),
