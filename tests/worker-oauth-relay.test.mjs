@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import worker from '../functions/_worker.js'
+import { onRequest as onPagesRequest } from '../functions/[[path]].js'
 
 
 const endpoint = 'https://zongrui.org/api/articles/_oauth/github/exchange'
@@ -130,4 +131,29 @@ test('immutable asset paths never return the SPA HTML fallback', async () => {
   assert.equal(response.headers.get('Cache-Control'), 'no-store')
   assert.equal(response.headers.get('X-Content-Type-Options'), 'nosniff')
   assert.equal(await response.text(), '')
+})
+
+test('Pages adapter forwards asset requests through the ASSETS binding', async () => {
+  const requestedUrls = []
+  const response = await onPagesRequest({
+    request: new Request('https://zongrui.org/theme-init.js'),
+    env: {
+      ASSETS: {
+        fetch: async (input) => {
+          requestedUrls.push(new Request(input).url)
+          return new Response('window.__themeReady = true', {
+            headers: { 'Content-Type': 'application/javascript' },
+          })
+        },
+      },
+    },
+    next() {
+      throw new Error('context.next() must not replace the ASSETS binding')
+    },
+    waitUntil() {},
+  })
+
+  assert.equal(response.status, 200)
+  assert.equal(await response.text(), 'window.__themeReady = true')
+  assert.deepEqual(requestedUrls, ['https://zongrui.org/theme-init.js'])
 })
