@@ -11,11 +11,7 @@ export function onRequest(context) {
     ARTICLES_ORIGIN_SHARED_SECRET: context.env.ARTICLES_ORIGIN_SHARED_SECRET,
     CF_ACCESS_CLIENT_ID: context.env.CF_ACCESS_CLIENT_ID,
     CF_ACCESS_CLIENT_SECRET: context.env.CF_ACCESS_CLIENT_SECRET,
-    ASSETS: {
-      fetch() {
-        return context.next()
-      },
-    },
+    ASSETS: context.env.ASSETS,
   }
 
   return worker.fetch(context.request, env, context)
