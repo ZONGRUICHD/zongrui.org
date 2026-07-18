@@ -202,7 +202,7 @@ function ContactSection() {
   )
 }
 
-function RecentWritingSection({ hasRobomasterLog }: { hasRobomasterLog: boolean }) {
+function RecentWritingSection() {
   const [articles, setArticles] = useState<PublicArticleSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -229,10 +229,10 @@ function RecentWritingSection({ hasRobomasterLog }: { hasRobomasterLog: boolean 
       <div className="recent-work__inner">
         <div className="recent-work__intro" data-reveal>
           <div>
-            <p className="section-kicker">RECENT ARTICLES / FEATURED PROJECT</p>
-            <h2 id="recent-work-title">最近文章 / 项目索引</h2>
+            <p className="section-kicker">RECENT ARTICLES</p>
+            <h2 id="recent-work-title">最近文章</h2>
           </div>
-          <p>最近写的文章，还有首页里的项目。</p>
+          <p>最近写的文章。</p>
         </div>
 
         <div className="recent-work__layout">
@@ -278,16 +278,6 @@ function RecentWritingSection({ hasRobomasterLog }: { hasRobomasterLog: boolean 
               )}
             </div>
           </div>
-
-          <aside className="current-project" aria-labelledby="current-project-title" data-reveal>
-            <p className="current-project__eyebrow">FEATURED PROJECT / ROBOMASTER</p>
-            <h3 id="current-project-title">RM Robot Rust<br />Control Framework</h3>
-            <p>面向 RoboMaster 的 Rust 整车控制框架。</p>
-            <div className="current-project__links">
-              <a href="https://github.com/ZONGRUICHD/RM-Robot-Rust" target="_blank" rel="noreferrer">查看项目源码 <Arrow /></a>
-              {hasRobomasterLog && <Link to="/articles?tag=robomaster">查看项目日志 <Arrow /></Link>}
-            </div>
-          </aside>
         </div>
       </div>
     </section>
@@ -480,7 +470,7 @@ function App() {
           </div>
         </section>
 
-        <RecentWritingSection hasRobomasterLog={articleTags.has('robomaster')} />
+        <RecentWritingSection />
         <ActivityWalls />
         <ContactSection />
         <SiteVisitorCounter visible />
