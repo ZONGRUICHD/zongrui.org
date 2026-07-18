@@ -31,7 +31,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 def _oauth_error_redirect(
     settings: Settings,
     error_code: str,
-    return_to: str = "/articles/console",
+    return_to: str = "/console",
 ) -> RedirectResponse:
     target = safe_return_to(return_to)
     parsed = urlsplit(target)

@@ -3,7 +3,19 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Index, Integer, String, Table, Text, UniqueConstraint
+from sqlalchemy import (
+    BigInteger,
+    CheckConstraint,
+    Column,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Table,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -122,6 +134,30 @@ class Media(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
 
+class GalleryImage(Base):
+    __tablename__ = "gallery_images"
+    __table_args__ = (
+        UniqueConstraint("media_id", name="uq_gallery_images_media_id"),
+        CheckConstraint("status IN ('draft', 'published', 'archived')", name="ck_gallery_images_status"),
+        CheckConstraint("sort_order >= 0", name="ck_gallery_images_sort_order"),
+        Index("ix_gallery_images_status_order", "status", "sort_order", "published_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    media_id: Mapped[str] = mapped_column(String(36), ForeignKey("media.id", ondelete="RESTRICT"), index=True)
+    title: Mapped[str] = mapped_column(String(200), default="")
+    caption: Mapped[str] = mapped_column(String(2000), default="")
+    alt_text: Mapped[str] = mapped_column(String(300))
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(16), default="draft", index=True)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
+
+    media: Mapped[Media] = relationship()
+
+
 class AdminSession(Base):
     __tablename__ = "admin_sessions"
 
@@ -138,7 +174,7 @@ class OAuthState(Base):
     __tablename__ = "oauth_states"
 
     state_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
-    return_to: Mapped[str] = mapped_column(String(255), default="/articles/console")
+    return_to: Mapped[str] = mapped_column(String(255), default="/console")
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 

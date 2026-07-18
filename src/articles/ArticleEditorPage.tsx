@@ -30,6 +30,15 @@ function readLocalDraft(id: string | undefined): LocalDraft | null {
   }
 }
 
+function removeLocalDraft(id: string | undefined) {
+  try {
+    localStorage.removeItem(localKey(id))
+  } catch {
+    // A successful server save must not be reported as failed only because the
+    // browser blocks local storage cleanup (for example in strict privacy mode).
+  }
+}
+
 export function ArticleEditorPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -55,6 +64,7 @@ export function ArticleEditorPage() {
   const [preview, setPreview] = useState(false)
   const [coverUploading, setCoverUploading] = useState(false)
   const [translating, setTranslating] = useState(false)
+  const revisionDialogRef = useRef<HTMLDialogElement>(null)
   const lastCheckpointRef = useRef(Date.now())
   const changeVersionRef = useRef(0)
   // Monotonic race guard for async transforms. Autosave may reset the dirty
@@ -96,6 +106,13 @@ export function ArticleEditorPage() {
   useEffect(() => {
     editor?.setEditable(!preview)
   }, [editor, preview])
+
+  useEffect(() => {
+    const dialog = revisionDialogRef.current
+    if (!dialog) return
+    if (showRevisions && !dialog.open) dialog.showModal()
+    if (!showRevisions && dialog.open) dialog.close()
+  }, [showRevisions])
 
   const tags = useMemo(() => Array.from(new Set(tagsText.split(/[,，]/).map((tag) => tag.trim()).filter(Boolean))), [tagsText])
 
@@ -233,8 +250,8 @@ export function ArticleEditorPage() {
           changeVersionRef.current = 0
           setChangeVersion(0)
           setSaveState('saved')
-          localStorage.removeItem(localKey(submittedArticleId))
-          localStorage.removeItem(localKey(saved.id))
+          removeLocalDraft(submittedArticleId)
+          removeLocalDraft(saved.id)
         } else {
           setSaveState('local')
         }
@@ -244,7 +261,7 @@ export function ArticleEditorPage() {
         if (isCurrent && pendingNavigationRef.current) {
           const destination = pendingNavigationRef.current
           pendingNavigationRef.current = null
-          navigate(`/articles/console/edit/${destination}`, { replace: true })
+          navigate(`/console/articles/edit/${destination}`, { replace: true })
         }
         if (reason === 'manual' && isCurrent) {
           setNotice('已保存。')
@@ -401,11 +418,11 @@ export function ArticleEditorPage() {
     <ConsoleGate>
       <main className="editor-page" id="main-content" aria-busy={!hydrated}>
         <header className="editor-topbar">
-          <div><Link to="/articles/console">← 文章</Link><span className={`save-indicator save-indicator--${saveState}`}>{saveState === 'saving' ? '正在保存' : saveState === 'saved' ? '已保存' : saveState === 'offline' ? '离线保存' : saveState === 'conflict' ? '版本冲突' : saveState === 'local' ? '本地草稿' : '未保存'}</span></div>
+          <div><Link to="/console/articles">← 文章</Link><span className={`save-indicator save-indicator--${saveState}`}>{saveState === 'saving' ? '正在保存' : saveState === 'saved' ? '已保存' : saveState === 'offline' ? '离线保存' : saveState === 'conflict' ? '版本冲突' : saveState === 'local' ? '本地草稿' : '未保存'}</span></div>
           <div><button type="button" onClick={() => setPreview((value) => !value)}>{preview ? '继续编辑' : '预览'}</button><button type="button" onClick={() => setShowRevisions((value) => !value)}>修订 {revisions.length}</button><button className="articles-primary-button" type="button" disabled={saveState === 'saving'} onClick={() => void persist('manual')}>保存</button></div>
         </header>
 
-        {recoverable && <div className="editor-recovery" role="status"><div><strong>发现本地草稿</strong><p>{formatArticleDate(recoverable.savedAt)} 保存在这台设备上。</p></div><button type="button" onClick={() => applyLocal(recoverable)}>恢复</button><button type="button" onClick={() => { localStorage.removeItem(localKey(id)); setRecoverable(null) }}>丢弃</button></div>}
+        {recoverable && <div className="editor-recovery" role="status"><div><strong>发现本地草稿</strong><p>{formatArticleDate(recoverable.savedAt)} 保存在这台设备上。</p></div><button type="button" onClick={() => applyLocal(recoverable)}>恢复</button><button type="button" onClick={() => { removeLocalDraft(id); setRecoverable(null) }}>丢弃</button></div>}
         {notice && <div className="editor-notice" role="status">{notice}<button type="button" aria-label="关闭提示" onClick={() => setNotice('')}>×</button></div>}
 
         {!hydrated ? <div className="editor-loading">正在打开文章…</div> : (
@@ -470,7 +487,15 @@ export function ArticleEditorPage() {
           </div>
         )}
 
-        {showRevisions && <aside className="revision-drawer" aria-label="修订历史"><header><h2>修订历史</h2><button type="button" aria-label="关闭" onClick={() => setShowRevisions(false)}>×</button></header>{revisions.length === 0 ? <p>还没有修订记录。</p> : <ol>{revisions.map((item) => <li key={item.id}><div><strong>REV {item.revision}</strong><span>{item.reason} · {formatArticleDate(item.createdAt)}</span></div><button type="button" onClick={() => void restore(item.revision)}>恢复</button></li>)}</ol>}</aside>}
+        <dialog
+          ref={revisionDialogRef}
+          className="revision-drawer"
+          aria-labelledby="revision-history-title"
+          onClose={() => setShowRevisions(false)}
+        >
+          <header><h2 id="revision-history-title">修订历史</h2><button type="button" aria-label="关闭" onClick={() => revisionDialogRef.current?.close()}>×</button></header>
+          {revisions.length === 0 ? <p>还没有修订记录。</p> : <ol>{revisions.map((item) => <li key={item.id}><div><strong>REV {item.revision}</strong><span>{item.reason} · {formatArticleDate(item.createdAt)}</span></div><button type="button" onClick={() => void restore(item.revision)}>恢复</button></li>)}</ol>}
+        </dialog>
       </main>
     </ConsoleGate>
   )

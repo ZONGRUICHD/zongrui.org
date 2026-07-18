@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session, selectinload
 from ..config import Settings, get_settings
 from ..database import get_db
 from ..media import media_backup_lock, process_upload, safe_media_path
-from ..models import AdminSession, Article, ArticleRevision, Comment, Media, SlugRedirect
+from ..models import AdminSession, Article, ArticleRevision, Comment, GalleryImage, Media, SlugRedirect
 from ..schemas import (
     AdminArticleEnvelope,
     ArticlePatch,
@@ -500,6 +500,8 @@ def delete_media(
         url = media_url(media, settings)
         if db.scalar(select(func.count(Article.id)).where(Article.content_html.contains(url, autoescape=True))):
             raise HTTPException(status_code=409, detail="media is used in article content")
+        if db.scalar(select(func.count(GalleryImage.id)).where(GalleryImage.media_id == media.id)):
+            raise HTTPException(status_code=409, detail="media is used in the public gallery")
         path = safe_media_path(media.path, settings)
         audit(db, "media.delete", "media", media.id, sha256=media.sha256)
         db.delete(media)

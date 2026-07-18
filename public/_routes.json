@@ -5,6 +5,12 @@
     "/api/articles/*",
     "/articles",
     "/articles/*",
+    "/console",
+    "/console/*",
+    "/projects",
+    "/projects/*",
+    "/gallery",
+    "/gallery/*",
     "/sitemap.xml"
   ],
   "exclude": [
