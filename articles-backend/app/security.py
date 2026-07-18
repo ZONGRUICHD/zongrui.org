@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import hmac
 import secrets
@@ -75,38 +76,70 @@ def github_authorize_url(settings: Settings, state: str) -> str:
     return f"https://github.com/login/oauth/authorize?{query}"
 
 
+async def _exchange_github_user(settings: Settings, code: str) -> object:
+    timeout = httpx.Timeout(10.0, connect=4.0, read=8.0, write=4.0, pool=2.0)
+    relay_url = settings.oauth_exchange_relay_url
+    async with httpx.AsyncClient(timeout=timeout, trust_env=not bool(relay_url)) as client:
+        if relay_url:
+            relay_response = await client.post(
+                relay_url,
+                headers={
+                    "Accept": "application/json",
+                    "User-Agent": "zongrui-articles/1.0",
+                    "X-ZR-Origin-Token": settings.origin_shared_secret,
+                },
+                json={
+                    "clientId": settings.github_client_id,
+                    "clientSecret": settings.github_client_secret,
+                    "code": code,
+                    "redirectUri": settings.oauth_callback_url,
+                },
+            )
+            if relay_response.status_code in {400, 401}:
+                raise HTTPException(status_code=401, detail="GitHub OAuth exchange failed")
+            relay_response.raise_for_status()
+            return relay_response.json()
+
+        token_response = await client.post(
+            "https://github.com/login/oauth/access_token",
+            headers={"Accept": "application/json", "User-Agent": "zongrui-articles/1.0"},
+            data={
+                "client_id": settings.github_client_id,
+                "client_secret": settings.github_client_secret,
+                "code": code,
+                "redirect_uri": settings.oauth_callback_url,
+            },
+        )
+        token_response.raise_for_status()
+        token_payload = token_response.json()
+        access_token = token_payload.get("access_token") if isinstance(token_payload, dict) else None
+        if not isinstance(access_token, str) or not access_token:
+            raise HTTPException(status_code=401, detail="GitHub OAuth exchange failed")
+        user_response = await client.get(
+            "https://api.github.com/user",
+            headers={
+                "Accept": "application/vnd.github+json",
+                "Authorization": f"Bearer {access_token}",
+                "User-Agent": "zongrui-articles/1.0",
+                "X-GitHub-Api-Version": "2022-11-28",
+            },
+        )
+        user_response.raise_for_status()
+        return user_response.json()
+
+
 async def exchange_github_code(settings: Settings, code: str) -> dict[str, object]:
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            token_response = await client.post(
-                "https://github.com/login/oauth/access_token",
-                headers={"Accept": "application/json", "User-Agent": "zongrui-articles/1.0"},
-                data={
-                    "client_id": settings.github_client_id,
-                    "client_secret": settings.github_client_secret,
-                    "code": code,
-                    "redirect_uri": settings.oauth_callback_url,
-                },
-            )
-            token_response.raise_for_status()
-            access_token = token_response.json().get("access_token")
-            if not isinstance(access_token, str) or not access_token:
-                raise HTTPException(status_code=401, detail="GitHub OAuth exchange failed")
-            user_response = await client.get(
-                "https://api.github.com/user",
-                headers={
-                    "Accept": "application/vnd.github+json",
-                    "Authorization": f"Bearer {access_token}",
-                    "User-Agent": "zongrui-articles/1.0",
-                    "X-GitHub-Api-Version": "2022-11-28",
-                },
-            )
-            user_response.raise_for_status()
-            user = user_response.json()
+        async with asyncio.timeout(12.0):
+            user = await _exchange_github_user(settings, code)
     except HTTPException:
         raise
+    except (httpx.TimeoutException, TimeoutError) as exc:
+        raise HTTPException(status_code=504, detail="GitHub OAuth exchange timed out") from exc
     except (httpx.HTTPError, ValueError) as exc:
         raise HTTPException(status_code=502, detail="GitHub OAuth is temporarily unavailable") from exc
+    if not isinstance(user, dict):
+        raise HTTPException(status_code=502, detail="GitHub user response is invalid")
     user_id = user.get("id")
     login = user.get("login")
     if not isinstance(user_id, int) or not isinstance(login, str):
@@ -116,7 +149,8 @@ async def exchange_github_code(settings: Settings, code: str) -> dict[str, objec
     # display and audit records.
     if user_id != settings.admin_github_user_id:
         raise HTTPException(status_code=403, detail="this GitHub account is not an administrator")
-    return {"id": user_id, "login": login, "avatarUrl": user.get("avatar_url")}
+    avatar_url = user.get("avatarUrl") or user.get("avatar_url")
+    return {"id": user_id, "login": login, "avatarUrl": avatar_url}
 
 
 def create_admin_session(db: Session, user_id: int, login: str, settings: Settings) -> tuple[str, str]:

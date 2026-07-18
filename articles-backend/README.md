@@ -154,6 +154,18 @@ Create a GitHub OAuth App with this exact callback URL:
 https://zongrui.org/api/articles/v1/auth/github/callback
 ```
 
+In production, when `ARTICLES_ORIGIN_SHARED_SECRET` is set, the backend sends
+the short-lived authorization code to the protected Pages relay at
+`/api/articles/_oauth/github/exchange`. This avoids depending on the home
+server's route to GitHub. The relay returns only the verified GitHub profile;
+the GitHub access token remains at the edge. Set
+`ARTICLES_GITHUB_EXCHANGE_RELAY_URL` only to override the default same-origin
+relay URL for a controlled preview or test. Override URLs are restricted to
+the public site, its subdomains, this project's `pages.dev` preview hostnames,
+or loopback; non-loopback relays must use HTTPS. Set
+`ARTICLES_GITHUB_EXCHANGE_RELAY_ENABLED=false` only as an emergency switch for
+an environment with known-good direct GitHub egress.
+
 The example contains the numeric ID `98888228`, verified against GitHub's user
 API for `ZONGRUICHD` during implementation. Re-verify it before first deploy;
 the numeric ID is the authoritative allowlist because a login can be renamed.
@@ -185,7 +197,7 @@ Access can be enabled later without changing the application.
 
 If Access is unavailable, generate a separate origin secret with
 `openssl rand -hex 32`. Put it in `/etc/zongrui-articles.env` as
-`ARTICLES_ORIGIN_SHARED_SECRET` and in Pages as `ORIGIN_SHARED_SECRET`. The
+`ARTICLES_ORIGIN_SHARED_SECRET` and in Pages as `ARTICLES_ORIGIN_SHARED_SECRET`. The
 Pages Function sends it as `X-ZR-Origin-Token`; the backend compares it in
 constant time and returns 404 for API/auth/admin requests without a match. The
 two values must never be committed or printed. Access and this token may also

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
@@ -24,6 +26,19 @@ from ..security import (
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+def _oauth_error_redirect(
+    settings: Settings,
+    error_code: str,
+    return_to: str = "/articles/console",
+) -> RedirectResponse:
+    target = safe_return_to(return_to)
+    parsed = urlsplit(target)
+    query = [(key, value) for key, value in parse_qsl(parsed.query, keep_blank_values=True) if key != "authError"]
+    query.append(("authError", error_code))
+    redirect_path = urlunsplit(("", "", parsed.path, urlencode(query), parsed.fragment))
+    return RedirectResponse(f"{settings.public_base_url}{redirect_path}", status_code=302)
 
 
 def _set_auth_cookies(response: Response, session_token: str, csrf_token: str, settings: Settings) -> None:
@@ -62,13 +77,35 @@ def github_login(
 
 @router.get("/github/callback")
 async def github_callback(
-    code: str = Query(min_length=1, max_length=512),
-    state: str = Query(min_length=1, max_length=512),
+    code: str | None = Query(default=None, max_length=512),
+    state: str | None = Query(default=None, max_length=512),
+    error: str | None = Query(default=None, max_length=128),
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ) -> RedirectResponse:
-    return_to = consume_oauth_state(db, state)
-    user = await exchange_github_code(settings, code)
+    if not state:
+        return _oauth_error_redirect(settings, "state_expired")
+    try:
+        return_to = consume_oauth_state(db, state)
+    except HTTPException:
+        return _oauth_error_redirect(settings, "state_expired")
+
+    if error:
+        error_code = "access_denied" if error == "access_denied" else "github_error"
+        return _oauth_error_redirect(settings, error_code, return_to)
+    if not code:
+        return _oauth_error_redirect(settings, "exchange_failed", return_to)
+
+    try:
+        user = await exchange_github_code(settings, code)
+    except HTTPException as exc:
+        error_code = {
+            401: "exchange_failed",
+            403: "not_admin",
+            502: "github_unavailable",
+            504: "github_unavailable",
+        }.get(exc.status_code, "login_failed")
+        return _oauth_error_redirect(settings, error_code, return_to)
     session_token, csrf_token = create_admin_session(db, int(user["id"]), str(user["login"]), settings)
     response = RedirectResponse(f"{settings.public_base_url}{return_to}", status_code=302)
     _set_auth_cookies(response, session_token, csrf_token, settings)
