@@ -98,6 +98,17 @@ def test_media_is_reencoded_and_svg_is_rejected(admin_client: TestClient, docume
     )
     assert insecure_media.status_code == 308
     assert insecure_media.headers["location"].startswith("https://media.example.test/media/")
+    cloudflare_http_media = admin_client.get(
+        urlparse(media["url"]).path,
+        headers={
+            "Host": "media.example.test",
+            "X-Forwarded-Proto": "https",
+            "CF-Visitor": '{"scheme":"http"}',
+        },
+        follow_redirects=False,
+    )
+    assert cloudflare_http_media.status_code == 308
+    assert cloudflare_http_media.headers["location"].startswith("https://media.example.test/media/")
 
     document_with_figure = {
         "type": "doc",

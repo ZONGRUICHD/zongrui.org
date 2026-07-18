@@ -514,7 +514,14 @@ class ActivityHandler(BaseHTTPRequestHandler):
 
     def _redirect_insecure_public_request(self) -> bool:
         forwarded_proto = self.headers.get("X-Forwarded-Proto", "").split(",", 1)[0].strip().lower()
-        if forwarded_proto != "http":
+        visitor_scheme = ""
+        try:
+            visitor = json.loads(self.headers.get("CF-Visitor", "{}"))
+            if isinstance(visitor, dict):
+                visitor_scheme = str(visitor.get("scheme", "")).lower()
+        except (json.JSONDecodeError, TypeError):
+            pass
+        if forwarded_proto != "http" and visitor_scheme != "http":
             return False
         self.send_response(HTTPStatus.PERMANENT_REDIRECT)
         self._common_headers(NO_CACHE)
