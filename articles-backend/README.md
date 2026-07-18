@@ -148,6 +148,23 @@ Use `18232` when free. Otherwise choose the first free port from `18233` through
 `18239` and set it consistently in the service and Tunnel configuration. No UFW
 allow rule is needed because the process stays on loopback.
 
+When a release archive is created on Windows, disable checkout EOL conversion
+for the archive command. Otherwise Git for Windows can export `scripts/*.sh`
+with CRLF even though the committed blobs and `.gitattributes` require LF:
+
+```powershell
+$sha = (git rev-parse --short=12 HEAD).Trim()
+$bundle = Join-Path $env:TEMP "zongrui-articles-$sha.tar.gz"
+git -c core.autocrlf=false archive --format=tar.gz --output=$bundle HEAD:articles-backend
+```
+
+Before copying the bundle, inspect its two shell scripts and reject any `CRLF`
+bytes. A Python virtual environment is also not relocatable: its entry-point
+shebangs contain the absolute directory used at creation time. Create `.venv`
+only at the final `/opt/zongrui-articles/.venv` path, or preserve the existing
+stable-path environment during an atomic source swap; do not build it inside a
+temporary release directory and then rename that directory.
+
 Install into separate runtime and backup identities. The web process belongs to
 the read-only data group but never to the backup user's group, so it cannot read
 the restic password or R2 credentials:
