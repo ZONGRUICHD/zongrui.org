@@ -19,6 +19,8 @@ os.environ.update(
         "ARTICLES_ADMIN_GITHUB_LOGIN": "ZONGRUICHD",
         "ARTICLES_TURNSTILE_BYPASS": "true",
         "ARTICLES_RATE_LIMIT_SECRET": "test-rate-limit-secret-with-at-least-32-bytes",
+        "ARTICLES_STATISTICS_SECRET": "test-statistics-secret-with-at-least-32-bytes",
+        "ARTICLES_STATISTICS_STARTED_AT": "2026-07-18T00:00:00Z",
         "ARTICLES_COOKIE_SECURE": "false",
         "ARTICLES_TRUST_PROXY_HEADERS": "true",
     }

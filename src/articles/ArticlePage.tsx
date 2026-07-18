@@ -12,6 +12,7 @@ import { articleApi, ApiError } from './api'
 import { Comments } from './Comments'
 import { formatArticleDate, usePageMeta } from './pageMeta'
 import type { PublicArticle, PublicArticleSummary } from './types'
+import { trackAfterVisibleDwell } from './visitTracking'
 
 type Heading = { id: string; text: string; level: number }
 type LightboxImage = { src: string; alt: string; caption: string }
@@ -21,6 +22,7 @@ type AdjacentArticles = {
 }
 
 const emptyAdjacentArticles: AdjacentArticles = { newer: null, older: null }
+const readerCountFormatter = new Intl.NumberFormat('zh-CN')
 
 function readBootstrappedArticle(slug: string) {
   const element = document.getElementById('__ZR_ARTICLE_DATA__')
@@ -67,6 +69,7 @@ export function ArticlePage() {
   const [error, setError] = useState('')
   const [adjacentArticles, setAdjacentArticles] = useState<AdjacentArticles>(emptyAdjacentArticles)
   const [shareStatus, setShareStatus] = useState('')
+  const [viewCount, setViewCount] = useState<number | null>(null)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const lightboxDialogRef = useRef<HTMLDialogElement>(null)
   const lightboxTriggerRef = useRef<HTMLImageElement | null>(null)
@@ -117,6 +120,27 @@ export function ArticlePage() {
     return () => { active = false }
   }, [article?.slug])
 
+  useEffect(() => {
+    const currentSlug = article?.slug
+    if (!currentSlug) {
+      setViewCount(null)
+      return
+    }
+    let active = true
+    setViewCount(null)
+    const cleanup = trackAfterVisibleDwell(() => {
+      articleApi.recordArticleView(currentSlug).then((stats) => {
+        if (active) setViewCount(stats.uniqueVisitors)
+      }).catch(() => {
+        // View statistics are optional and must never block the article.
+      })
+    })
+    return () => {
+      active = false
+      cleanup()
+    }
+  }, [article?.slug])
+
   const prepared = useMemo(() => article ? prepareArticleHtml(article.contentHtml) : { html: '', headings: [], images: [] }, [article])
   const writingMode = article ? (article.writingMode ?? 'horizontal') : undefined
   const lightboxImage = lightboxIndex === null ? null : prepared.images[lightboxIndex] ?? null
@@ -132,7 +156,14 @@ export function ArticlePage() {
     author: { '@type': 'Person', name: 'ZongRui', url: 'https://zongrui.org' },
     mainEntityOfPage: `https://zongrui.org/articles/${article.slug}`,
     inLanguage: (article.writingMode ?? 'horizontal') === 'vertical-rl' ? 'zh-Hant' : 'zh-CN',
-  } : undefined, [article])
+    ...(viewCount === null ? {} : {
+      interactionStatistic: {
+        '@type': 'InteractionCounter',
+        interactionType: { '@type': 'ReadAction' },
+        userInteractionCount: viewCount,
+      },
+    }),
+  } : undefined, [article, viewCount])
 
   usePageMeta({
     title: article ? `${article.title} — ZongRui` : '文章 — ZongRui',
@@ -284,6 +315,7 @@ export function ArticlePage() {
                 <div className="article-byline">
                   <span>ZongRui</span>
                   <span>{article.readingMinutes} MIN READ</span>
+                  {viewCount !== null && <span>约 {readerCountFormatter.format(viewCount)} 人读过</span>}
                   <time dateTime={article.updatedAt}>更新于 {formatArticleDate(article.updatedAt)}</time>
                   {writingMode === 'vertical-rl' && <span>繁中直排 · 右至左</span>}
                 </div>

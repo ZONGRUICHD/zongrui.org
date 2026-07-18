@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from functools import lru_cache
 from ipaddress import ip_address
 from pathlib import Path
@@ -36,6 +37,8 @@ class Settings(BaseSettings):
     turnstile_action: str = "turnstile-spin-v1"
     turnstile_bypass: bool = False
     rate_limit_secret: str = ""
+    statistics_secret: str = ""
+    statistics_started_at: datetime = datetime(2026, 7, 18, tzinfo=timezone.utc)
     origin_shared_secret: str = Field(
         default="",
         validation_alias=AliasChoices("ARTICLES_ORIGIN_SHARED_SECRET", "ORIGIN_SHARED_SECRET"),
@@ -102,9 +105,9 @@ class Settings(BaseSettings):
             raise ValueError("GitHub exchange relay host must belong to the public site or Cloudflare Pages")
         return self
 
-    @field_validator("rate_limit_secret")
+    @field_validator("rate_limit_secret", "statistics_secret")
     @classmethod
-    def validate_rate_limit_secret(cls, value: str) -> str:
+    def validate_hmac_secret(cls, value: str) -> str:
         if value and len(value.encode("utf-8")) < 32:
             raise ValueError("must contain at least 32 bytes")
         return value
@@ -147,6 +150,8 @@ class Settings(BaseSettings):
             missing.append("ARTICLES_ADMIN_GITHUB_USER_ID")
         if unset(self.rate_limit_secret):
             missing.append("ARTICLES_RATE_LIMIT_SECRET")
+        if unset(self.statistics_secret):
+            missing.append("ARTICLES_STATISTICS_SECRET")
         if not self.turnstile_bypass and unset(self.turnstile_secret):
             missing.append("ARTICLES_TURNSTILE_SECRET")
         if self.origin_shared_secret and unset(self.origin_shared_secret):

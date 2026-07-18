@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import hmac
+import ipaddress
 import secrets
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode, urlparse
@@ -217,6 +218,85 @@ def daily_source_hash(address: str, settings: Settings, now: datetime | None = N
     now = now or utc_now()
     daily_key = hmac.new(settings.rate_limit_secret.encode(), now.date().isoformat().encode(), hashlib.sha256).digest()
     return hmac.new(daily_key, address.encode(), hashlib.sha256).hexdigest()
+
+
+def normalized_network_address(address: str) -> str | None:
+    """Minimize an address before hashing; IPv6 visitors are grouped by /64."""
+
+    candidate = address.strip().partition("%")[0]
+    try:
+        parsed = ipaddress.ip_address(candidate)
+    except ValueError:
+        return None
+    if isinstance(parsed, ipaddress.IPv6Address):
+        if parsed.ipv4_mapped is not None:
+            return parsed.ipv4_mapped.compressed
+        network = ipaddress.ip_network(f"{parsed.compressed}/64", strict=False)
+        return f"{network.network_address.compressed}/64"
+    return parsed.compressed
+
+
+def stable_visitor_hash(address: str, settings: Settings, context: str) -> str | None:
+    """Return a stable, context-separated digest without storing the address."""
+
+    normalized = normalized_network_address(address)
+    if normalized is None:
+        return None
+    message = context.encode("utf-8") + b"\0" + normalized.encode("utf-8")
+    return hmac.new(settings.statistics_secret.encode("utf-8"), message, hashlib.sha256).hexdigest()
+
+
+_OBVIOUS_BOT_USER_AGENT_MARKERS = (
+    "bot",
+    "crawler",
+    "spider",
+    "slurp",
+    "archiver",
+    "headlesschrome",
+    "lighthouse",
+    "facebookexternalhit",
+    "telegrambot",
+    "discordbot",
+    "linkedinbot",
+    "whatsapp",
+    "curl/",
+    "wget/",
+    "python-requests",
+    "python-httpx",
+    "go-http-client",
+    "postmanruntime",
+)
+
+
+def is_obvious_bot(request: Request) -> bool:
+    """Ignore explicit crawlers, scripted clients, previews, and prefetches.
+
+    The user agent is inspected in memory only and is never written to the
+    database or audit log.
+    """
+
+    user_agent = request.headers.get("User-Agent", "").strip().lower()
+    if not user_agent or any(marker in user_agent for marker in _OBVIOUS_BOT_USER_AGENT_MARKERS):
+        return True
+    purpose = " ".join(
+        (
+            request.headers.get("Purpose", ""),
+            request.headers.get("Sec-Purpose", ""),
+            request.headers.get("X-Moz", ""),
+        )
+    ).lower()
+    return any(marker in purpose for marker in ("prefetch", "prerender", "preview"))
+
+
+def statistics_opted_out(request: Request) -> bool:
+    return request.headers.get("DNT", "").strip() == "1" or request.headers.get("Sec-GPC", "").strip() == "1"
+
+
+def statistics_cross_site(request: Request, settings: Settings) -> bool:
+    if request.headers.get("Sec-Fetch-Site", "").strip().lower() == "cross-site":
+        return True
+    origin = request.headers.get("Origin", "").strip().rstrip("/")
+    return bool(origin and origin != settings.public_base_url)
 
 
 async def verify_turnstile(token: str, address: str, settings: Settings) -> None:

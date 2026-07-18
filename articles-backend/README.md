@@ -16,8 +16,14 @@ wall service in `../backend`.
 - `media.zongrui.org` exposes **only** `/media/*` paths matching the content-addressed
   media regex shown below. It must not proxy `/api`, `/health`, or arbitrary
   paths to this process.
-- The API never stores raw visitor IP addresses. Comment throttling uses a
-  daily rotating HMAC, and the scheduler clears stored hashes after 48 hours.
+- The API never stores raw visitor IP addresses or visitor user agents.
+  Comment throttling uses a daily rotating HMAC. Network visitor estimates use
+  the separate `ARTICLES_STATISTICS_SECRET`, group IPv6 by `/64`, and use
+  different contexts for the site and for every article so records cannot be
+  linked across scopes. Only the digests are retained: no per-visitor timestamp
+  is stored. They remain until the counters are deliberately reset.
+  Obvious bots, prefetches, cross-site POSTs, `DNT: 1`, and `Sec-GPC: 1` are
+  ignored.
 - Request bodies are bounded before JSON or multipart parsing; comments have a
   dedicated 16 KiB ceiling and image uploads allow only the configured 10 MiB
   payload plus multipart overhead.
@@ -41,6 +47,13 @@ Public:
 - `GET /articles/{slug}/comments?cursor=&limit=` → `{items,nextCursor}`.
 - `POST /articles/{slug}/comments` with
   `{nickname,body,parentId?,turnstileToken}` → `{comment}`.
+- `GET|POST /stats/site` returns
+  `{uniqueVisitors,counted,since}`. GET is read-only; POST records one unique
+  site visitor.
+- `GET|POST /stats/articles/{slug}` uses the same response shape for the
+  article's estimated unique network readers. The article POST also records the
+  site visitor. Repeated POSTs from the same purpose-separated network digest
+  do not increment. All statistics responses are `no-store`.
 - `GET /rss.xml` and `GET /sitemap.xml` return XML.
 
 Authentication:
@@ -145,8 +158,12 @@ curl --fail http://127.0.0.1:18232/health
 ```
 
 Edit `/etc/zongrui-articles.env` rather than using the example unchanged.
-Generate the rate-limit secret with `openssl rand -hex 32`. The file must remain
-root-owned, group-readable only by `zongrui-articles-data`, and must never enter Git.
+Generate separate rate-limit and statistics secrets with `openssl rand -hex 32`.
+Set `ARTICLES_STATISTICS_STARTED_AT` to the UTC deployment time. The file must
+remain root-owned, group-readable only by `zongrui-articles-data`, and must
+never enter Git. Rotating `ARTICLES_STATISTICS_SECRET` makes returning networks
+look new; rotate it only while clearing `site_visitors` and `article_readers`
+and resetting `ARTICLES_STATISTICS_STARTED_AT` in the same maintenance window.
 
 Create a GitHub OAuth App with this exact callback URL:
 

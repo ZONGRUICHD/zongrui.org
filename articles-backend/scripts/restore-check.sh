@@ -30,7 +30,17 @@ try:
     result = database.execute("PRAGMA integrity_check").fetchone()
     if result != ("ok",):
         raise SystemExit(f"restored database integrity_check failed: {result!r}")
+    tables = {
+        row[0]
+        for row in database.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
+    }
+    required_tables = {"articles", "media", "site_visitors", "article_readers"}
+    missing_tables = required_tables - tables
+    if missing_tables:
+        raise SystemExit(f"restored database is missing tables: {sorted(missing_tables)!r}")
     database.execute("SELECT COUNT(*) FROM articles").fetchone()
+    database.execute("SELECT COUNT(*) FROM site_visitors").fetchone()
+    database.execute("SELECT COUNT(*) FROM article_readers").fetchone()
     for relative_path, expected_sha256 in database.execute("SELECT path, sha256 FROM media"):
         media_path = (media_root / relative_path).resolve()
         if not media_path.is_relative_to(media_root) or not media_path.is_file():
