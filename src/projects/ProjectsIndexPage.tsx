@@ -1,10 +1,27 @@
 import { Link } from 'react-router-dom'
-import { SitePage } from '../components/SiteChrome'
+import { Arrow, SitePage } from '../components/SiteChrome'
 import { usePageMeta } from '../articles/pageMeta'
-import { moveProjectCard, resetProjectCard, useProjectReveals } from './projectMotion'
+import { useProjectReveals } from './projectMotion'
 import { technicalProjects } from './projectData'
-import { ProjectVisual } from './ProjectVisuals'
+import { ProjectShowcaseVisual } from './ProjectVisuals'
 import './projects.css'
+
+const showcaseCopy = {
+  robot: {
+    title: 'RM Robot Rust',
+    titleAccent: 'Control Framework',
+    description: '面向 RoboMaster 的 Rust 整车控制框架。',
+    tags: ['Rust', 'STM32F407', 'RoboMaster', 'no_std'],
+    bandTone: 'graphite',
+  },
+  network: {
+    title: 'Arista Switch',
+    titleAccent: 'Web Dashboard',
+    description: '把交换机运行状态，收进一块真正可用的屏幕。',
+    tags: ['Python', 'Arista EOS', 'Telemetry', 'Operations'],
+    bandTone: 'indigo',
+  },
+} as const
 
 export function ProjectsIndexPage() {
   useProjectReveals()
@@ -19,65 +36,46 @@ export function ProjectsIndexPage() {
   return (
     <SitePage compactHeader>
       <main className="projects-index" id="main-content">
-        <section className="projects-index__hero" id="top">
-          <div className="projects-shell">
-            <p className="projects-kicker">PROJECT INDEX / SYSTEMS THAT RUN</p>
-            <div className="projects-index__heading">
-              <h1>技术作品</h1>
-              <div>
-                <strong>02</strong>
-                <p>两个项目。一个贴着电机和总线跑，另一个留在交换机里。</p>
-              </div>
-            </div>
-            <div className="projects-index__signal" aria-hidden="true"><span /><span /><span /><span /></div>
-          </div>
-        </section>
+        <section id="top" aria-labelledby="projects-title">
+          <h1 className="sr-only" id="projects-title">技术作品</h1>
+          {technicalProjects.map((project) => {
+            const copy = showcaseCopy[project.tone]
+            const reverse = project.tone === 'network'
 
-        <section className="projects-catalogue" aria-label="项目列表">
-          <div className="projects-shell">
-            {technicalProjects.map((project, index) => (
+            return (
               <article
-                className={`project-index-card project-index-card--${project.tone}`}
-                data-project-reveal
-                onPointerMove={moveProjectCard}
-                onPointerLeave={resetProjectCard}
-                style={{ '--project-order': index } as React.CSSProperties}
+                className={`feature-band feature-band--${copy.bandTone}${reverse ? ' feature-band--reverse' : ''}`}
                 key={project.slug}
               >
-                <div className="project-index-card__glow" aria-hidden="true" />
-                <div className="project-index-card__copy">
-                  <div className="project-index-card__meta">
-                    <span>{project.number}</span>
-                    <p>{project.eyebrow}</p>
+                <div className="feature-band__pattern" aria-hidden="true" />
+                <div className="feature-band__inner">
+                  <div className="feature-band__visual" data-project-reveal>
+                    <ProjectShowcaseVisual tone={project.tone} />
                   </div>
-                  <h2><Link to={`/projects/${project.slug}`}>{project.title}</Link></h2>
-                  <p className="project-index-card__statement">{project.statement}</p>
-                  <div className="project-index-card__facts">
-                    {project.metrics.map((metric) => (
-                      <div key={metric.label}>
-                        <strong>{metric.value}</strong>
-                        <span>{metric.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="project-index-card__actions">
-                    <Link to={`/projects/${project.slug}`}>打开项目档案 <span aria-hidden="true">→</span></Link>
-                    <span>{project.status}</span>
+                  <div className="feature-band__copy" data-project-reveal>
+                    <p className="feature-eyebrow">{project.eyebrow}</p>
+                    <h2>
+                      {copy.title}
+                      <span>{copy.titleAccent}</span>
+                    </h2>
+                    <p className="feature-description">{copy.description}</p>
+                    <p className="feature-supporting">{project.summary}</p>
+                    <div className="feature-tags" aria-label={`${project.shortTitle} 技术栈`}>
+                      {copy.tags.map((tag) => <span key={tag}>{tag}</span>)}
+                    </div>
+                    <div className="feature-band__actions">
+                      <Link className="button button--light" to={`/projects/${project.slug}`}>
+                        查看项目档案 <Arrow />
+                      </Link>
+                      <a className="feature-band__log-link" href={project.repository} target="_blank" rel="noreferrer">
+                        GitHub 源码 <Arrow />
+                      </a>
+                    </div>
                   </div>
                 </div>
-                <Link className="project-index-card__visual" to={`/projects/${project.slug}`} aria-label={`打开 ${project.title} 项目档案`} tabIndex={-1}>
-                  <ProjectVisual tone={project.tone} />
-                </Link>
               </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="projects-index__note" data-project-reveal>
-          <div className="projects-shell">
-            <p className="projects-kicker">WORKING RULE / 00</p>
-            <p>这里记录已经落进代码的部分，也保留还没有完成的边界。项目页不是效果图清单，是实现决策的索引。</p>
-          </div>
+            )
+          })}
         </section>
       </main>
     </SitePage>
