@@ -22,6 +22,15 @@ function XIcon() {
   )
 }
 
+function WeChatIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M9.2 3C4.67 3 1 6.14 1 10c0 2.18 1.18 4.13 3.03 5.42l-.77 2.55 2.93-1.45c.94.31 1.95.48 3.01.48.34 0 .68-.02 1.01-.05A6.75 6.75 0 0 1 9.5 14c0-3.66 3.14-6.63 7.13-6.63.18 0 .36.01.54.02C15.98 4.8 12.89 3 9.2 3Zm-2.7 5.25a1.05 1.05 0 1 1 0-2.1 1.05 1.05 0 0 1 0 2.1Zm5.4 0a1.05 1.05 0 1 1 0-2.1 1.05 1.05 0 0 1 0 2.1Z" />
+      <path d="M23 14c0-3.04-2.85-5.5-6.37-5.5s-6.38 2.46-6.38 5.5 2.86 5.5 6.38 5.5c.82 0 1.6-.13 2.32-.36l2.28 1.13-.6-2A5.28 5.28 0 0 0 23 14Zm-8.48-.72a.82.82 0 1 1 0-1.64.82.82 0 0 1 0 1.64Zm4.22 0a.82.82 0 1 1 0-1.64.82.82 0 0 1 0 1.64Z" />
+    </svg>
+  )
+}
+
 function ContactSection() {
   const contacts = [
     {
@@ -37,6 +46,13 @@ function ContactSection() {
       href: 'https://x.com/zongruichd',
       icon: <XIcon />,
       note: '看看我最近在说什么',
+    },
+    {
+      label: '微信',
+      handle: 'zongruichd',
+      href: 'weixin://dl/chat?zongruichd',
+      icon: <WeChatIcon />,
+      note: '微信号',
     },
   ]
 
