@@ -4808,6 +4808,12 @@ html[data-theme='dark'] .contact-card:nth-child(2) .contact-card__mark {
   background: #111;
 }
 
+.contact-card:nth-child(3) .contact-card__mark,
+html[data-theme='dark'] .contact-card:nth-child(3) .contact-card__mark {
+  color: #fff;
+  background: #07c160;
+}
+
 /* Traditional vertical reading: centre short articles and give each column room. */
 
 .article-layout--vertical {
