@@ -1,5 +1,4 @@
 import { useRef } from 'react'
-import { Link } from 'react-router-dom'
 import { usePageMeta } from './articles/pageMeta'
 import { ActivityWalls } from './components/ActivityWalls'
 import { Arrow, SitePage } from './components/SiteChrome'
@@ -94,32 +93,6 @@ function ContactSection() {
         </div>
       </div>
       <span className="motion-line contact-section__line" aria-hidden="true" />
-    </section>
-  )
-}
-
-function ArticlePortal() {
-  return (
-    <section
-      className="article-portal motion-surface"
-      id="articles"
-      aria-label="文章"
-      data-scroll-reveal
-      data-pointer-surface
-    >
-      <div className="article-portal__grid" aria-hidden="true" />
-      <span className="article-portal__orbit article-portal__orbit--one" data-scroll-drift aria-hidden="true" />
-      <span className="article-portal__orbit article-portal__orbit--two" data-scroll-drift aria-hidden="true" />
-      <Link
-        className="article-portal__link"
-        to="/articles"
-        aria-label="进入文章"
-        data-reveal-item
-        data-pointer-tilt
-      >
-        <span>文章</span>
-      </Link>
-      <span className="motion-line article-portal__line" data-line-origin="center center" aria-hidden="true" />
     </section>
   )
 }
@@ -234,7 +207,6 @@ function App() {
           <span className="motion-line hero__exit-line" aria-hidden="true" />
         </section>
 
-        <ArticlePortal />
         <WebsiteStories />
         <ContactSection />
         <div className="home-visitors" data-scroll-reveal>
