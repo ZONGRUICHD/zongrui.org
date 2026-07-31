@@ -3,6 +3,8 @@ import { usePageMeta } from './articles/pageMeta'
 import { ActivityWalls } from './components/ActivityWalls'
 import { Arrow, SitePage } from './components/SiteChrome'
 import { SiteVisitorCounter } from './components/SiteVisitorCounter'
+import { useVisualStyle } from './components/VisualStyleSwitcher'
+import { F1HomePage } from './f1/F1HomePage'
 import { useHomeMotion } from './motion/useHomeMotion'
 
 function TelegramIcon() {
@@ -169,7 +171,8 @@ function WebsiteStories() {
 
 function App() {
   const pageRef = useRef<HTMLElement>(null)
-  useHomeMotion(pageRef)
+  const { style } = useVisualStyle()
+  useHomeMotion(pageRef, style)
 
   usePageMeta({
     title: 'ZongRui — Rust / RoboMaster / Linux',
@@ -179,6 +182,14 @@ function App() {
     language: 'zh-CN',
     ogLocale: 'zh_CN',
   })
+
+  if (style === 'f1') {
+    return (
+      <SitePage>
+        <F1HomePage />
+      </SitePage>
+    )
+  }
 
   return (
     <SitePage>

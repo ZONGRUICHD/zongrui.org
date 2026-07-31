@@ -60,19 +60,21 @@ flowchart LR
 | 类别 | 技术与用途 |
 | --- | --- |
 | 语言 | TypeScript / TSX、原生 CSS、Cloudflare Worker JavaScript |
-| UI | React 19.2.7、React DOM 19.2.7、React Hooks |
+| UI | React 19.2.7、React DOM 19.2.7、React Hooks；公开站点拥有相互独立的赛事风格与经典风格组件树，Console 不进入视觉切换 |
 | 路由 | React Router DOM 7.18.1；`BrowserRouter`、`React.lazy` 与 `Suspense` 实现客户端路由和按页拆包 |
-| 交互动效 | GSAP 3.15、`@gsap/react` 与 ScrollTrigger；作用域清理、滚动显现、线条绘制、轻量视差、鼠标倾斜，并完整尊重 `prefers-reduced-motion` 与触屏能力 |
+| 交互动效 | GSAP 3.15、`@gsap/react` 与 ScrollTrigger；赛事主题包含起步灯、标题遮罩、滚动显现、媒体视差、数据墙揭示与全屏导航，并完整尊重 `prefers-reduced-motion` 与触屏能力 |
 | 富文本编辑 | TipTap 3.28.0：Core、React、Starter Kit、Link、Placeholder、Underline，以及自定义 `figureImage` 节点 |
 | 数据访问 | 浏览器原生 Fetch API；同源 `/api/articles/v1`；JSON、`FormData`、Cookie 与 CSRF 请求头 |
 | 草稿与离线 | `localStorage`、3 秒空闲自动保存、离线草稿恢复、5 分钟自动修订检查点、revision 冲突提示 |
 | 样式 | 手写 CSS、CSS Custom Properties、Grid、Flex、响应式媒体查询、可持久化的系统/浅色/深色三档主题与 `prefers-reduced-motion`；没有使用 Tailwind、Sass 或组件 UI 框架 |
-| 字体 | `@fontsource-variable/jetbrains-mono` 5.2.8；本地托管 HarmonyOS Sans SC Bold |
+| 字体 | 经典主题使用 `@fontsource-variable/jetbrains-mono`；赛事主题使用 SIL OFL 的 Barlow Condensed 与 Titillium Web；中文统一回退到本地托管 HarmonyOS Sans SC Bold |
 | 静态媒体 | WebP、SVG、GIF；公开图片展采用响应式非等宽网格与原生 `<dialog>` 灯箱；Vite 指纹资源使用一年 immutable 缓存 |
 | 构建 | Vite 8.1.4、`@vitejs/plugin-react` 6.0.3、TypeScript 7.0.2 strict mode、ES2022、Lightning CSS 1.32.0 |
 | 运行环境 | Node.js 22+、npm lockfile v3 |
 
 TipTap 正文支持 H2/H3、粗体、斜体、下划线、删除线、引用、列表、链接、分隔线、代码块、带图注图片及撤销/重做。正文图片可上传或从媒体库复用，并保存 33/50/75/100% 宽度和起始/居中/末端对齐。H1 只用于文章标题，不允许在正文中重复出现。
+
+赛事主题借鉴赛车转播与赛事网站的高层次信息节奏，但不使用 Formula 1 标志、专属字体、官方图形、照片或计时数据，也不代表与 Formula 1 存在关联。官方 F1 2018 字体没有可用于本站再分发的公开授权；未来如取得书面许可，可通过 `--f1-display` 字体变量替换。
 
 ### Cloudflare 边缘层
 

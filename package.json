@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
+    "@fontsource/barlow-condensed": "^5.3.0",
+    "@fontsource/titillium-web": "^5.3.0",
     "@gsap/react": "^2.1.2",
     "@tiptap/core": "^3.28.0",
     "@tiptap/extension-link": "^3.28.0",

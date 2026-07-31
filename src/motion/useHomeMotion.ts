@@ -10,7 +10,7 @@ type MotionConditions = {
   finePointer?: boolean
 }
 
-export function useHomeMotion(scope: RefObject<HTMLElement | null>) {
+export function useHomeMotion(scope: RefObject<HTMLElement | null>, dependency: unknown) {
   useGSAP(() => {
     const root = scope.current
     if (!root) return
@@ -258,5 +258,5 @@ export function useHomeMotion(scope: RefObject<HTMLElement | null>) {
       window.cancelAnimationFrame(refreshFrame)
       media.revert()
     }
-  }, { scope })
+  }, { scope, dependencies: [dependency], revertOnUpdate: true })
 }

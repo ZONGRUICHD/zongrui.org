@@ -5,9 +5,12 @@ import { galleryApi } from './api'
 import { GalleryLightbox } from './GalleryLightbox'
 import type { GalleryImage } from './types'
 import { useGalleryReveal } from './useGalleryReveal'
+import { useVisualStyle } from '../components/VisualStyleSwitcher'
+import { F1GalleryView } from '../f1/F1GalleryView'
 import './gallery.css'
 
 export function GalleryPage() {
+  const { style } = useVisualStyle()
   const pageRef = useRef<HTMLElement>(null)
   const [images, setImages] = useState<GalleryImage[]>([])
   const [nextCursor, setNextCursor] = useState<string | null>(null)
@@ -23,7 +26,7 @@ export function GalleryPage() {
     language: 'zh-CN',
     ogLocale: 'zh_CN',
   })
-  useGalleryReveal(pageRef, images.length)
+  useGalleryReveal(pageRef, `${style}-${images.length}`)
 
   useEffect(() => {
     let active = true
@@ -51,6 +54,23 @@ export function GalleryPage() {
     } finally {
       setLoadingMore(false)
     }
+  }
+
+  if (style === 'f1') {
+    return (
+      <SitePage compactHeader>
+        <F1GalleryView
+          images={images}
+          selected={selected}
+          setSelected={setSelected}
+          nextCursor={nextCursor}
+          loading={loading}
+          loadingMore={loadingMore}
+          error={error}
+          loadMore={loadMore}
+        />
+      </SitePage>
+    )
   }
 
   return (

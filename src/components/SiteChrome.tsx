@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ThemeSwitcher } from './ThemeSwitcher'
-import { VisualStyleSwitcher } from './VisualStyleSwitcher'
+import { VisualStyleSwitcher, useVisualStyle } from './VisualStyleSwitcher'
+import { F1SitePage } from '../f1/F1Chrome'
 
-const HOME_SECTIONS = ['top', 'articles', 'web', 'contact'] as const
+const HOME_SECTIONS = ['top', 'web', 'contact'] as const
 type HomeSection = (typeof HOME_SECTIONS)[number]
 
 export function Arrow() {
@@ -84,7 +85,6 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
   }, [location.pathname])
 
   const articlePageActive = location.pathname.startsWith('/articles')
-    || (location.pathname === '/' && activeSection === 'articles')
   const galleryPageActive = location.pathname.startsWith('/gallery')
   const projectsPageActive = location.pathname.startsWith('/projects')
   const homeSectionProps = (section: HomeSection) => {
@@ -200,6 +200,12 @@ export function SitePage({
   children: ReactNode
   compactHeader?: boolean
 }) {
+  const { style } = useVisualStyle()
+
+  if (style === 'f1') {
+    return <F1SitePage>{children}</F1SitePage>
+  }
+
   return (
     <>
       <a className="skip-link" href="#main-content">跳到主要内容</a>
