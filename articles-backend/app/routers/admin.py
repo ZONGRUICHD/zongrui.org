@@ -146,6 +146,7 @@ def create_article(
     article = Article(
         slug=slug,
         status="draft",
+        is_pinned=payload.isPinned,
         title=payload.title,
         summary=payload.summary,
         cover_media_id=cover.id if cover else None,
@@ -197,6 +198,8 @@ def update_article(
         article.title = payload.title
     if "summary" in changed_fields and payload.summary is not None:
         article.summary = payload.summary
+    if "isPinned" in changed_fields:
+        article.is_pinned = payload.isPinned
     if "contentJson" in changed_fields and payload.contentJson is not None:
         rendered = render_content(payload.contentJson, settings)
         article.content_json = json.dumps(rendered.document, ensure_ascii=False, separators=(",", ":"))

@@ -2770,6 +2770,20 @@ img {
   letter-spacing: 0.08em;
 }
 
+.article-row__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.article-row__pin {
+  padding: 0.28rem 0.42rem;
+  color: var(--on-accent);
+  line-height: 1;
+  background: var(--rpi-red);
+}
+
 .article-row__body h2 {
   max-width: 46rem;
   margin: 0.6rem 0 0.75rem;
@@ -3803,6 +3817,14 @@ img {
 .console-status--scheduled { color: var(--rpi-blue-text); }
 .console-status--archived { color: var(--muted); }
 .console-status--draft { color: var(--rpi-red-text); }
+.console-status--pinned { color: var(--rpi-blue-text); }
+
+.console-article-row__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
 
 .console-article-row h2 {
   margin: 0 0 0.35rem;

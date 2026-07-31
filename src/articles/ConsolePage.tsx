@@ -66,7 +66,10 @@ export function ConsolePage() {
           {!loading && !error && articles.length === 0 && <div className="console-empty"><strong>这里还是空的。</strong><p>写第一篇文章，它会先保存为草稿。</p><Link to="/console/articles/new">开始写 →</Link></div>}
           {articles.map((article) => (
             <article className="console-article-row" key={article.id}>
-              <div className={`console-status console-status--${article.status}`}>{statusLabel[article.status]}</div>
+              <div className="console-article-row__badges">
+                <div className={`console-status console-status--${article.status}`}>{statusLabel[article.status]}</div>
+                {article.isPinned && <div className="console-status console-status--pinned">置顶</div>}
+              </div>
               <div><h2><Link to={`/console/articles/edit/${article.id}`}>{article.title || '无标题'}</Link></h2><p>{article.summary || '还没有摘要。'}</p></div>
               <div className="console-article-row__meta"><span>REV {article.revision}</span><time dateTime={article.updatedAt}>{formatArticleDate(article.updatedAt)}</time></div>
               <Link className="console-edit-link" to={`/console/articles/edit/${article.id}`}>编辑 →</Link>

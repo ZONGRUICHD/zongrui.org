@@ -3,12 +3,19 @@ from __future__ import annotations
 from fastapi.testclient import TestClient
 
 
-def create_article(client: TestClient, document: dict[str, object], slug: str = "first-post") -> dict[str, object]:
+def create_article(
+    client: TestClient,
+    document: dict[str, object],
+    slug: str = "first-post",
+    *,
+    is_pinned: bool = False,
+) -> dict[str, object]:
     response = client.post(
         "/api/articles/v1/admin/articles",
         json={
             "title": "第一篇文章",
             "slug": slug,
+            "isPinned": is_pinned,
             "summary": "一段摘要",
             "tags": ["Rust", "机器人"],
             "contentJson": document,
@@ -21,6 +28,7 @@ def create_article(client: TestClient, document: dict[str, object], slug: str = 
 def test_draft_publish_search_and_etag(admin_client: TestClient, document: dict[str, object]) -> None:
     article = create_article(admin_client, document)
     assert article["status"] == "draft"
+    assert article["isPinned"] is False
     assert article["revision"] == 1
     assert article["tags"] == ["Rust", "机器人"]
     assert admin_client.get("/api/articles/v1/articles").json()["items"] == []
@@ -36,6 +44,7 @@ def test_draft_publish_search_and_etag(admin_client: TestClient, document: dict[
 
     listing = admin_client.get("/api/articles/v1/articles?q=RoboMaster").json()
     assert [item["slug"] for item in listing["items"]] == ["first-post"]
+    assert listing["items"][0]["isPinned"] is False
     detail = admin_client.get("/api/articles/v1/articles/first-post").json()["article"]
     assert "<strong>Rust 与 RoboMaster</strong>" in detail["contentHtml"]
     tags = admin_client.get("/api/articles/v1/tags").json()["items"]
@@ -149,6 +158,70 @@ def test_writing_mode_is_versioned_and_public(admin_client: TestClient, document
         json={"revision": published["revision"], "contentLanguage": "zh-HK-script"},
     )
     assert invalid_language.status_code == 422
+
+
+def test_pinned_articles_sort_first_across_cursor_pages(
+    admin_client: TestClient,
+    document: dict[str, object],
+) -> None:
+    older_pinned = create_article(
+        admin_client,
+        document,
+        "older-pinned",
+        is_pinned=True,
+    )
+    older_pinned = admin_client.post(
+        f"/api/articles/v1/admin/articles/{older_pinned['id']}/publish",
+        json={"revision": older_pinned["revision"]},
+    ).json()["article"]
+
+    latest_unpinned = create_article(admin_client, document, "latest-unpinned")
+    admin_client.post(
+        f"/api/articles/v1/admin/articles/{latest_unpinned['id']}/publish",
+        json={"revision": latest_unpinned["revision"]},
+    )
+
+    newer_pinned = create_article(
+        admin_client,
+        document,
+        "newer-pinned",
+        is_pinned=True,
+    )
+    admin_client.post(
+        f"/api/articles/v1/admin/articles/{newer_pinned['id']}/publish",
+        json={"revision": newer_pinned["revision"]},
+    )
+
+    slugs: list[str] = []
+    pinned: list[bool] = []
+    cursor: str | None = None
+    while True:
+        params = {"limit": 1}
+        if cursor:
+            params["cursor"] = cursor
+        page = admin_client.get("/api/articles/v1/articles", params=params).json()
+        slugs.extend(item["slug"] for item in page["items"])
+        pinned.extend(item["isPinned"] for item in page["items"])
+        cursor = page["nextCursor"]
+        if cursor is None:
+            break
+
+    assert slugs == ["newer-pinned", "older-pinned", "latest-unpinned"]
+    assert pinned == [True, True, False]
+
+    updated = admin_client.patch(
+        f"/api/articles/v1/admin/articles/{older_pinned['id']}",
+        json={"revision": older_pinned["revision"], "isPinned": False},
+    )
+    assert updated.status_code == 200
+    assert updated.json()["article"]["isPinned"] is False
+    assert "/v1/articles" in updated.headers["x-zr-cache-invalidate"]
+
+    invalid = admin_client.patch(
+        f"/api/articles/v1/admin/articles/{newer_pinned['id']}",
+        json={"revision": newer_pinned["revision"], "isPinned": None},
+    )
+    assert invalid.status_code == 422
 
 
 def test_h1_and_untrusted_image_are_rejected(admin_client: TestClient) -> None:

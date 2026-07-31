@@ -11,6 +11,7 @@ export type Tag = {
 export type PublicArticleSummary = {
   id: string
   slug: string
+  isPinned: boolean
   title: string
   summary: string
   coverUrl: string | null
@@ -102,6 +103,7 @@ export type CursorPage<T> = {
 export type ArticleDraftInput = {
   title: string
   slug: string
+  isPinned: boolean
   summary: string
   coverUrl: string | null
   tags: string[]
