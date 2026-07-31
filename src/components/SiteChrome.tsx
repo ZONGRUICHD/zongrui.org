@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ThemeSwitcher } from './ThemeSwitcher'
+import { VisualStyleSwitcher } from './VisualStyleSwitcher'
 
 const HOME_SECTIONS = ['top', 'articles', 'web', 'contact'] as const
 type HomeSection = (typeof HOME_SECTIONS)[number]
@@ -105,6 +106,7 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
           </span>
         </Link>
         <div className="masthead-actions">
+          <VisualStyleSwitcher className="masthead-style-switcher" />
           <ThemeSwitcher className="masthead-theme-switcher" />
           <a className="masthead-github" href="https://github.com/zongruichd" target="_blank" rel="noreferrer">
             GitHub <Arrow />
@@ -127,6 +129,8 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
 
       <nav id="site-navigation" className={`site-nav${menuOpen ? ' is-open' : ''}`} aria-label="主导航">
         <div className="site-nav__inner">
+          <span className="site-nav__race-label" aria-hidden="true">ZR / RACE CONTROL</span>
+          <VisualStyleSwitcher className="mobile-style-switcher" />
           <div className="site-nav__modes">
             <Link className={articlePageActive ? 'is-active' : undefined} to="/articles" aria-current={articlePageActive ? 'page' : undefined}>
               文章
