@@ -60,7 +60,7 @@ function schedulePointerFrame(
   pointerFrames.set(element, state)
 }
 
-export function useProjectReveals() {
+export function useProjectReveals(dependency: unknown) {
   useEffect(() => {
     const targets = Array.from(document.querySelectorAll<HTMLElement>('[data-project-reveal]'))
     const pointerTargets = Array.from(document.querySelectorAll<HTMLElement>('.project-index-card'))
@@ -105,7 +105,7 @@ export function useProjectReveals() {
       finePointer.removeEventListener('change', handlePointerCapability)
       pointerTargets.forEach((target) => clearPointerMotion(target))
     }
-  }, [])
+  }, [dependency])
 }
 
 export function moveProjectCard(event: PointerEvent<HTMLElement>) {

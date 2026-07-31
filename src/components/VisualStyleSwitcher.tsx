@@ -1,4 +1,11 @@
-import { useEffect, useState } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react'
 
 const VISUAL_STYLE_STORAGE_KEY = 'zongrui-visual-style'
 const VISUAL_STYLE_CHANGE_EVENT = 'zongrui-visual-style-change'
@@ -30,11 +37,14 @@ function saveVisualStyle(style: VisualStyle) {
   }
 }
 
-type VisualStyleSwitcherProps = {
-  className?: string
+type VisualStyleContextValue = {
+  style: VisualStyle
+  selectStyle: (style: VisualStyle) => void
 }
 
-export function VisualStyleSwitcher({ className = '' }: VisualStyleSwitcherProps) {
+const VisualStyleContext = createContext<VisualStyleContextValue | null>(null)
+
+export function VisualStyleProvider({ children }: { children: ReactNode }) {
   const [style, setStyle] = useState<VisualStyle>(getVisualStyle)
 
   useEffect(() => {
@@ -45,23 +55,46 @@ export function VisualStyleSwitcher({ className = '' }: VisualStyleSwitcherProps
       applyVisualStyle(nextStyle)
     }
 
+    applyVisualStyle(style)
     window.addEventListener('storage', syncStyle)
     window.addEventListener(VISUAL_STYLE_CHANGE_EVENT, syncStyle)
     return () => {
       window.removeEventListener('storage', syncStyle)
       window.removeEventListener(VISUAL_STYLE_CHANGE_EVENT, syncStyle)
     }
-  }, [])
+  }, [style])
 
-  const selectStyle = (nextStyle: VisualStyle) => {
-    saveVisualStyle(nextStyle)
-    setStyle(nextStyle)
-    applyVisualStyle(nextStyle)
-    window.dispatchEvent(new CustomEvent(VISUAL_STYLE_CHANGE_EVENT, { detail: nextStyle }))
+  const value = useMemo<VisualStyleContextValue>(() => ({
+    style,
+    selectStyle: (nextStyle) => {
+      saveVisualStyle(nextStyle)
+      setStyle(nextStyle)
+      applyVisualStyle(nextStyle)
+      window.dispatchEvent(new CustomEvent(VISUAL_STYLE_CHANGE_EVENT, { detail: nextStyle }))
+    },
+  }), [style])
+
+  return <VisualStyleContext.Provider value={value}>{children}</VisualStyleContext.Provider>
+}
+
+export function useVisualStyle() {
+  const context = useContext(VisualStyleContext)
+  if (!context) {
+    throw new Error('useVisualStyle must be used within VisualStyleProvider')
   }
+  return context
+}
+
+type VisualStyleSwitcherProps = {
+  className?: string
+  variant?: 'classic' | 'f1'
+}
+
+export function VisualStyleSwitcher({ className = '', variant = 'classic' }: VisualStyleSwitcherProps) {
+  const { style, selectStyle } = useVisualStyle()
 
   return (
-    <div className={`visual-style-switcher${className ? ` ${className}` : ''}`} role="group" aria-label="视觉风格">
+    <div className={`visual-style-switcher visual-style-switcher--${variant}${className ? ` ${className}` : ''}`} role="group" aria-label="视觉风格">
       <button
         className={style === 'f1' ? 'is-active' : undefined}
         type="button"

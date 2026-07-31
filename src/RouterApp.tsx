@@ -2,6 +2,8 @@ import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { usePageMeta } from './articles/pageMeta'
 import { SitePage } from './components/SiteChrome'
+import { VisualStyleProvider } from './components/VisualStyleSwitcher'
+import { useVisualStyle } from './components/VisualStyleSwitcher'
 
 const HomePage = lazy(() => import('./App'))
 const ArticleIndexPage = lazy(() => import('./articles/ArticleIndexPage').then((module) => ({ default: module.ArticleIndexPage })))
@@ -47,6 +49,7 @@ function LegacyConsoleRedirect() {
 
 function NotFoundPage() {
   const { pathname } = useLocation()
+  const { style } = useVisualStyle()
   usePageMeta({
     title: '页面不存在 — ZongRui',
     description: '这个地址没有对应的公开页面。',
@@ -55,6 +58,19 @@ function NotFoundPage() {
     language: 'zh-CN',
     ogLocale: 'zh_CN',
   })
+
+  if (style === 'f1') {
+    return (
+      <SitePage compactHeader>
+        <main className="f1-not-found" id="main-content">
+          <p className="f1-kicker"><span>DNF</span> ROUTE NOT FOUND</p>
+          <strong>404</strong>
+          <h1>这个地址<br />没有页面。</h1>
+          <Link className="f1-button f1-button--red" to="/"><span>返回首页</span><i>→</i></Link>
+        </main>
+      </SitePage>
+    )
+  }
 
   return (
     <SitePage compactHeader>
@@ -69,26 +85,28 @@ function NotFoundPage() {
 
 export default function RouterApp() {
   return (
-    <BrowserRouter>
-      <ScrollManager />
-      <Suspense fallback={<main className="route-loading" aria-label="正在读取页面" aria-busy="true" />}>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/articles" element={<ArticleIndexPage />} />
-          <Route path="/articles/console/*" element={<LegacyConsoleRedirect />} />
-          <Route path="/console" element={<ConsoleDashboard />} />
-          <Route path="/console/articles" element={<ConsolePage />} />
-          <Route path="/console/gallery" element={<ConsoleGalleryPage />} />
-          <Route path="/console/comments" element={<ConsoleCommentsPage />} />
-          <Route path="/console/articles/new" element={<ArticleEditorPage />} />
-          <Route path="/console/articles/edit/:id" element={<ArticleEditorPage />} />
-          <Route path="/articles/:slug" element={<ArticlePage />} />
-          <Route path="/projects" element={<ProjectsIndexPage />} />
-          <Route path="/projects/:slug" element={<ProjectDetailPage />} />
-          <Route path="/gallery" element={<GalleryPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </Suspense>
-    </BrowserRouter>
+    <VisualStyleProvider>
+      <BrowserRouter>
+        <ScrollManager />
+        <Suspense fallback={<main className="route-loading" aria-label="正在读取页面" aria-busy="true" />}>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/articles" element={<ArticleIndexPage />} />
+            <Route path="/articles/console/*" element={<LegacyConsoleRedirect />} />
+            <Route path="/console" element={<ConsoleDashboard />} />
+            <Route path="/console/articles" element={<ConsolePage />} />
+            <Route path="/console/gallery" element={<ConsoleGalleryPage />} />
+            <Route path="/console/comments" element={<ConsoleCommentsPage />} />
+            <Route path="/console/articles/new" element={<ArticleEditorPage />} />
+            <Route path="/console/articles/edit/:id" element={<ArticleEditorPage />} />
+            <Route path="/articles/:slug" element={<ArticlePage />} />
+            <Route path="/projects" element={<ProjectsIndexPage />} />
+            <Route path="/projects/:slug" element={<ProjectDetailPage />} />
+            <Route path="/gallery" element={<GalleryPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    </VisualStyleProvider>
   )
 }
