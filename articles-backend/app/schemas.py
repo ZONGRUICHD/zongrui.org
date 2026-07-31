@@ -19,6 +19,7 @@ class TagOut(ApiModel):
 class ArticleSummaryOut(ApiModel):
     id: str
     slug: str
+    isPinned: bool
     title: str
     summary: str
     coverUrl: str | None = None
@@ -45,6 +46,7 @@ class AdminArticleOut(ArticleOut):
 class ArticleWrite(ApiModel):
     title: str = Field(min_length=1, max_length=200)
     slug: str | None = Field(default=None, min_length=1, max_length=160)
+    isPinned: bool = False
     summary: str = Field(default="", max_length=500)
     coverMediaId: str | None = None
     coverUrl: str | None = Field(default=None, max_length=500)
@@ -80,6 +82,7 @@ class ArticlePatch(ApiModel):
     revision: int = Field(ge=1)
     title: str | None = Field(default=None, min_length=1, max_length=200)
     slug: str | None = Field(default=None, min_length=1, max_length=160)
+    isPinned: bool = False
     summary: str | None = Field(default=None, max_length=500)
     coverMediaId: str | None = None
     coverUrl: str | None = Field(default=None, max_length=500)

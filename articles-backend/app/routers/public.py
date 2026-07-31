@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+import json
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
@@ -30,6 +32,30 @@ def _published_query(now: datetime):
     return and_(Article.status == "published", Article.published_at.is_not(None), Article.published_at <= now)
 
 
+def _article_cursor(article: Article, timestamp: datetime) -> str:
+    normalised = aware(timestamp)
+    assert normalised is not None
+    raw = json.dumps(
+        [article.is_pinned, normalised.isoformat(), article.id],
+        separators=(",", ":"),
+    ).encode()
+    return base64.urlsafe_b64encode(raw).decode().rstrip("=")
+
+
+def _decode_article_cursor(cursor: str | None) -> tuple[bool, datetime, str] | None:
+    if not cursor:
+        return None
+    try:
+        raw = base64.urlsafe_b64decode(cursor + "=" * (-len(cursor) % 4))
+        is_pinned, timestamp_text, identifier = json.loads(raw)
+        timestamp = datetime.fromisoformat(timestamp_text)
+        if type(is_pinned) is not bool or timestamp.tzinfo is None or not isinstance(identifier, str) or not identifier:
+            raise ValueError
+        return is_pinned, timestamp, identifier
+    except (ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise HTTPException(status_code=422, detail="invalid cursor") from exc
+
+
 @router.get("/articles", response_model=PaginatedArticles)
 def list_articles(
     q: str | None = Query(default=None, max_length=200),
@@ -57,21 +83,36 @@ def list_articles(
         start = datetime(archive, 1, 1, tzinfo=timezone.utc)
         end = datetime(archive + 1, 1, 1, tzinfo=timezone.utc)
         stmt = stmt.where(Article.published_at >= start, Article.published_at < end)
-    decoded = decode_cursor(cursor)
+    decoded = _decode_article_cursor(cursor)
     if decoded:
-        published_at, identifier = decoded
-        stmt = stmt.where(
-            or_(
-                Article.published_at < published_at,
-                and_(Article.published_at == published_at, Article.id < identifier),
-            )
+        is_pinned, published_at, identifier = decoded
+        later_in_group = or_(
+            Article.published_at < published_at,
+            and_(Article.published_at == published_at, Article.id < identifier),
         )
-    rows = list(db.scalars(stmt.order_by(Article.published_at.desc(), Article.id.desc()).limit(limit + 1)).all())
+        if is_pinned:
+            stmt = stmt.where(
+                or_(
+                    Article.is_pinned.is_(False),
+                    and_(Article.is_pinned.is_(True), later_in_group),
+                )
+            )
+        else:
+            stmt = stmt.where(and_(Article.is_pinned.is_(False), later_in_group))
+    rows = list(
+        db.scalars(
+            stmt.order_by(
+                Article.is_pinned.desc(),
+                Article.published_at.desc(),
+                Article.id.desc(),
+            ).limit(limit + 1)
+        ).all()
+    )
     has_more = len(rows) > limit
     items = rows[:limit]
     next_cursor = None
     if has_more and items:
-        next_cursor = encode_cursor(aware(items[-1].published_at), items[-1].id)  # type: ignore[arg-type]
+        next_cursor = _article_cursor(items[-1], items[-1].published_at)  # type: ignore[arg-type]
     return {"items": [article_summary(item, settings) for item in items], "nextCursor": next_cursor}
 
 

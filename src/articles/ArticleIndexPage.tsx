@@ -128,7 +128,10 @@ export function ArticleIndexPage() {
                 <article className="article-row" key={article.id}>
                   <div className="article-row__number">{String(index + 1).padStart(2, '0')}</div>
                   <div className="article-row__body">
-                    <p className="article-row__meta">{formatArticleDate(article.publishedAt)} · {article.readingMinutes} MIN READ</p>
+                    <p className="article-row__meta">
+                      {article.isPinned && <span className="article-row__pin">置顶</span>}
+                      <span>{formatArticleDate(article.publishedAt)} · {article.readingMinutes} MIN READ</span>
+                    </p>
                     <h2><Link to={`/articles/${article.slug}`}>{article.title}</Link></h2>
                     <p>{article.summary}</p>
                     <div className="article-row__tags">{article.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>

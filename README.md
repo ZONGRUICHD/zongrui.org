@@ -121,7 +121,7 @@ TipTap 正文支持 H2/H3、粗体、斜体、下划线、删除线、引用、�
 
 主要数据模型包括：`Article`、`ArticleRevision`、`Tag`、`ArticleTag`、`SlugRedirect`、`Comment`、`Media`、`GalleryImage`、`AdminSession`、`OAuthState`、不记录正文的 `AuditLog`，以及只保存分用途 HMAC 摘要的 `SiteVisitor`、`ArticleReader`。
 
-文章支持草稿、定时发布、已发布和归档状态；支持题图、摘要、标签、可编辑 slug、发布/撤回、修订恢复和一级评论。每篇文章可独立选择横排或右至左直排，并单独记录 `zh-CN` / `zh-Hant` 内容语言；排版与语言都会进入修订历史，页面元数据不再靠排版方向猜测语言。Console 另提供显式的 DeepSeek 简体转繁体操作，结果仍通过原有自动保存、revision 和修订历史落库，不会绕过版本控制。评论只按纯文本显示，可隐藏、恢复或软删除。
+文章支持草稿、定时发布、已发布和归档状态；支持置顶、题图、摘要、标签、可编辑 slug、发布/撤回、修订恢复和一级评论。多篇置顶文章会优先显示，并在置顶组内按发布时间倒序排列。每篇文章可独立选择横排或右至左直排，并单独记录 `zh-CN` / `zh-Hant` 内容语言；排版与语言都会进入修订历史，页面元数据不再靠排版方向猜测语言。Console 另提供显式的 DeepSeek 简体转繁体操作，结果仍通过原有自动保存、revision 和修订历史落库，不会绕过版本控制。评论只按纯文本显示，可隐藏、恢复或软删除。
 
 统一 `/console` 同时管理文章、评论和公开图片。图片先保存为草稿，可补充标题、说明、替代文字和顺序，再发布或归档；公开 `/gallery` 永远只读取已发布记录。旧 `/articles/console*` 地址由边缘 308 到等价的新地址，已有书签和 OAuth 回跳仍可使用。
 
@@ -262,7 +262,7 @@ cd articles-backend
 .venv/bin/alembic check
 ```
 
-后端当前有 78 项 pytest 测试，覆盖文章状态、搜索、ETag、revision 冲突、修订恢复、slug 重定向、排版与内容语言、公开图片展及安全重编码、OAuth 回跳约束、CSRF、Turnstile、评论限流与审核、DeepSeek 翻译映射与失败边界、定时发布、种子数据，以及统计去重、隐私信号、跨站拒绝、IPv6 归一和并发写入。另有 14 项 Node 测试验证 OAuth 边缘中继、统一 Console 与旧地址重定向、项目/图片深链元数据、真实 404、动态 sitemap、静态资源回退、文章和图片的边缘缓存及跨查询缓存失效。`pytest-cov` 用于覆盖率检查，Ruff 用于 Python 静态检查。
+后端当前有 79 项 pytest 测试，覆盖文章状态、置顶排序与分页、搜索、ETag、revision 冲突、修订恢复、slug 重定向、排版与内容语言、公开图片展及安全重编码、OAuth 回跳约束、CSRF、Turnstile、评论限流与审核、DeepSeek 翻译映射与失败边界、定时发布、种子数据，以及统计去重、隐私信号、跨站拒绝、IPv6 归一和并发写入。另有 14 项 Node 测试验证 OAuth 边缘中继、统一 Console 与旧地址重定向、项目/图片深链元数据、真实 404、动态 sitemap、静态资源回退、文章和图片的边缘缓存及跨查询缓存失效。`pytest-cov` 用于覆盖率检查，Ruff 用于 Python 静态检查。
 
 当前没有引入 ESLint、Prettier、Vitest/Jest 或 Playwright/Cypress；前端质量门槛由 TypeScript strict typecheck、Vite 生产构建和实际浏览器验收组成。
 

@@ -45,6 +45,7 @@ export function ArticleEditorPage() {
   const [articleId, setArticleId] = useState(id)
   const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
+  const [isPinned, setIsPinned] = useState(false)
   const [summary, setSummary] = useState('')
   const [coverUrl, setCoverUrl] = useState('')
   const [tagsText, setTagsText] = useState('')
@@ -121,6 +122,7 @@ export function ArticleEditorPage() {
     setArticleId(article.id)
     setTitle(article.title)
     setSlug(article.slug)
+    setIsPinned(article.isPinned ?? false)
     setSummary(article.summary)
     setCoverUrl(article.coverUrl ?? '')
     setTagsText(article.tags.join(', '))
@@ -141,6 +143,7 @@ export function ArticleEditorPage() {
   const applyLocal = useCallback((draft: LocalDraft) => {
     setTitle(draft.title)
     setSlug(draft.slug)
+    setIsPinned(draft.isPinned ?? false)
     setSummary(draft.summary)
     setCoverUrl(draft.coverUrl ?? '')
     setTagsText(draft.tags.join(', '))
@@ -185,6 +188,7 @@ export function ArticleEditorPage() {
   const snapshot = useCallback((reason: 'manual' | 'autosave', checkpoint = false): ArticleDraftInput => ({
     title: title.trim(),
     slug: slug.trim(),
+    isPinned,
     summary: summary.trim(),
     coverUrl: coverUrl.trim() || null,
     tags,
@@ -194,7 +198,7 @@ export function ArticleEditorPage() {
     revision: articleIdRef.current ? revisionRef.current : undefined,
     reason,
     checkpoint,
-  }), [contentJson, contentLanguage, coverUrl, slug, summary, tags, title, writingMode])
+  }), [contentJson, contentLanguage, coverUrl, isPinned, slug, summary, tags, title, writingMode])
 
   useEffect(() => {
     if (!hydrated || changeVersion === 0) return
@@ -454,6 +458,13 @@ export function ArticleEditorPage() {
               </section>
               <section>
                 <p className="articles-kicker">SETTINGS</p>
+                <fieldset className="editor-layout-picker">
+                  <legend>列表展示</legend>
+                  <label>
+                    <input type="checkbox" checked={isPinned} onChange={(event) => { setIsPinned(event.target.checked); markChanged() }} />
+                    <span><strong>置顶文章</strong><small>发布后优先显示在文章列表顶部</small></span>
+                  </label>
+                </fieldset>
                 <fieldset className="editor-layout-picker">
                   <legend>阅读排版</legend>
                   <label>

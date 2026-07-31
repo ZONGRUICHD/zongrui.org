@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     CheckConstraint,
     Column,
     DateTime,
@@ -15,6 +16,7 @@ from sqlalchemy import (
     Table,
     Text,
     UniqueConstraint,
+    false,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -37,12 +39,14 @@ class Article(Base):
     __tablename__ = "articles"
     __table_args__ = (
         Index("ix_articles_status_published", "status", "published_at"),
+        Index("ix_articles_status_pinned_published", "status", "is_pinned", "published_at", "id"),
         Index("ix_articles_scheduled", "status", "scheduled_at"),
     )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     slug: Mapped[str] = mapped_column(String(160), unique=True, index=True)
     status: Mapped[str] = mapped_column(String(16), default="draft", index=True)
+    is_pinned: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false(), nullable=False)
     title: Mapped[str] = mapped_column(String(200))
     summary: Mapped[str] = mapped_column(String(500), default="")
     cover_media_id: Mapped[str | None] = mapped_column(

@@ -141,6 +141,7 @@ def article_summary(article: Article, settings: Settings) -> dict[str, Any]:
     return {
         "id": article.id,
         "slug": article.slug,
+        "isPinned": article.is_pinned,
         "title": article.title,
         "summary": article.summary,
         "coverUrl": cover_url(article, settings),

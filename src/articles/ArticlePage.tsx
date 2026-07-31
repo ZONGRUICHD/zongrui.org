@@ -348,13 +348,13 @@ export function ArticlePage() {
                 <nav className="article-adjacent" aria-label="相邻文章">
                   {adjacentArticles.newer && (
                     <Link className="article-adjacent__link article-adjacent__link--newer" to={`/articles/${adjacentArticles.newer.slug}`}>
-                      <span>← 较新一篇</span>
+                      <span>← 上一篇</span>
                       <strong>{adjacentArticles.newer.title}</strong>
                     </Link>
                   )}
                   {adjacentArticles.older && (
                     <Link className="article-adjacent__link article-adjacent__link--older" to={`/articles/${adjacentArticles.older.slug}`}>
-                      <span>较早一篇 →</span>
+                      <span>下一篇 →</span>
                       <strong>{adjacentArticles.older.title}</strong>
                     </Link>
                   )}
