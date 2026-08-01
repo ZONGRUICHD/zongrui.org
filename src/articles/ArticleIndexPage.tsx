@@ -1,14 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { SitePage } from '../components/SiteChrome'
-import { useVisualStyle } from '../components/VisualStyleSwitcher'
-import { F1ArticleIndexView } from '../f1/F1ArticleIndexView'
 import { articleApi } from './api'
 import { formatArticleDate, usePageMeta } from './pageMeta'
 import type { PublicArticleSummary, Tag } from './types'
 
 export function ArticleIndexPage() {
-  const { style } = useVisualStyle()
   const [searchParams, setSearchParams] = useSearchParams()
   const query = searchParams.get('q') ?? ''
   const selectedTag = searchParams.get('tag') ?? ''
@@ -77,29 +74,6 @@ export function ArticleIndexPage() {
     } finally {
       setLoadingMore(false)
     }
-  }
-
-  if (style === 'f1') {
-    return (
-      <SitePage compactHeader>
-        <F1ArticleIndexView
-          query={query}
-          search={search}
-          selectedTag={selectedTag}
-          archive={archive}
-          articles={articles}
-          tags={tags}
-          nextCursor={nextCursor}
-          loading={loading}
-          loadingMore={loadingMore}
-          error={error}
-          setSearch={setSearch}
-          updateFilter={updateFilter}
-          submitSearch={submitSearch}
-          loadMore={loadMore}
-        />
-      </SitePage>
-    )
   }
 
   return (

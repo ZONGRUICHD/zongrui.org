@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ThemeSwitcher } from './ThemeSwitcher'
-import { VisualStyleSwitcher, useVisualStyle } from './VisualStyleSwitcher'
-import { F1SitePage } from '../f1/F1Chrome'
 
-const HOME_SECTIONS = ['top', 'web', 'contact'] as const
+const HOME_SECTIONS = ['top', 'articles', 'web', 'contact'] as const
 type HomeSection = (typeof HOME_SECTIONS)[number]
 
 export function Arrow() {
@@ -85,6 +83,7 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
   }, [location.pathname])
 
   const articlePageActive = location.pathname.startsWith('/articles')
+    || (location.pathname === '/' && activeSection === 'articles')
   const galleryPageActive = location.pathname.startsWith('/gallery')
   const projectsPageActive = location.pathname.startsWith('/projects')
   const homeSectionProps = (section: HomeSection) => {
@@ -106,7 +105,6 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
           </span>
         </Link>
         <div className="masthead-actions">
-          <VisualStyleSwitcher className="masthead-style-switcher" />
           <ThemeSwitcher className="masthead-theme-switcher" />
           <a className="masthead-github" href="https://github.com/zongruichd" target="_blank" rel="noreferrer">
             GitHub <Arrow />
@@ -129,8 +127,6 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
 
       <nav id="site-navigation" className={`site-nav${menuOpen ? ' is-open' : ''}`} aria-label="主导航">
         <div className="site-nav__inner">
-          <span className="site-nav__race-label" aria-hidden="true">ZR / RACE CONTROL</span>
-          <VisualStyleSwitcher className="mobile-style-switcher" />
           <div className="site-nav__modes">
             <Link className={articlePageActive ? 'is-active' : undefined} to="/articles" aria-current={articlePageActive ? 'page' : undefined}>
               文章
@@ -200,12 +196,6 @@ export function SitePage({
   children: ReactNode
   compactHeader?: boolean
 }) {
-  const { style } = useVisualStyle()
-
-  if (style === 'f1') {
-    return <F1SitePage>{children}</F1SitePage>
-  }
-
   return (
     <>
       <a className="skip-link" href="#main-content">跳到主要内容</a>

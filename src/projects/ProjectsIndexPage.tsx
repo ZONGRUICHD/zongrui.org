@@ -4,8 +4,6 @@ import { usePageMeta } from '../articles/pageMeta'
 import { useProjectReveals } from './projectMotion'
 import { technicalProjects } from './projectData'
 import { ProjectShowcaseVisual } from './ProjectVisuals'
-import { useVisualStyle } from '../components/VisualStyleSwitcher'
-import { F1ProjectsView } from '../f1/F1ProjectViews'
 import './projects.css'
 
 const showcaseCopy = {
@@ -26,8 +24,7 @@ const showcaseCopy = {
 } as const
 
 export function ProjectsIndexPage() {
-  const { style } = useVisualStyle()
-  useProjectReveals(style)
+  useProjectReveals()
   usePageMeta({
     title: '技术作品 — ZongRui',
     description: 'ZongRui 的嵌入式机器人与网络运维项目，包含实现方法、技术栈和当前边界。',
@@ -35,14 +32,6 @@ export function ProjectsIndexPage() {
     language: 'zh-CN',
     ogLocale: 'zh_CN',
   })
-
-  if (style === 'f1') {
-    return (
-      <SitePage compactHeader>
-        <F1ProjectsView />
-      </SitePage>
-    )
-  }
 
   return (
     <SitePage compactHeader>
