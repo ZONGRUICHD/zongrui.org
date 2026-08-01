@@ -4,15 +4,12 @@ import { usePageMeta } from '../articles/pageMeta'
 import { useProjectReveals } from './projectMotion'
 import { findTechnicalProject } from './projectData'
 import { ProjectVisual } from './ProjectVisuals'
-import { useVisualStyle } from '../components/VisualStyleSwitcher'
-import { F1ProjectDetailView, F1ProjectNotFoundView } from '../f1/F1ProjectViews'
 import './projects.css'
 
 export function ProjectDetailPage() {
-  const { style } = useVisualStyle()
   const { slug } = useParams<{ slug: string }>()
   const project = findTechnicalProject(slug)
-  useProjectReveals(style)
+  useProjectReveals()
   usePageMeta({
     title: project ? `${project.title} — ZongRui` : '项目不存在 — ZongRui',
     description: project?.summary ?? '这个项目地址不存在。',
@@ -23,9 +20,6 @@ export function ProjectDetailPage() {
   })
 
   if (!project) {
-    if (style === 'f1') {
-      return <SitePage compactHeader><F1ProjectNotFoundView /></SitePage>
-    }
     return (
       <SitePage compactHeader>
         <main className="project-not-found" id="main-content">
@@ -33,14 +27,6 @@ export function ProjectDetailPage() {
           <h1>这里没有这个项目。</h1>
           <Link to="/projects">返回技术作品</Link>
         </main>
-      </SitePage>
-    )
-  }
-
-  if (style === 'f1') {
-    return (
-      <SitePage compactHeader>
-        <F1ProjectDetailView project={project} />
       </SitePage>
     )
   }

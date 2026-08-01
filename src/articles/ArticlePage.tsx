@@ -13,8 +13,6 @@ import { Comments } from './Comments'
 import { formatArticleDate, usePageMeta } from './pageMeta'
 import type { PublicArticle, PublicArticleSummary } from './types'
 import { trackAfterVisibleDwell } from './visitTracking'
-import { useVisualStyle } from '../components/VisualStyleSwitcher'
-import { useF1PageMotion } from '../f1/useF1Motion'
 
 type Heading = { id: string; text: string; level: number }
 type LightboxImage = { src: string; alt: string; caption: string }
@@ -64,7 +62,6 @@ function prepareArticleHtml(source: string) {
 }
 
 export function ArticlePage() {
-  const { style } = useVisualStyle()
   const { slug = '' } = useParams()
   const [article, setArticle] = useState<PublicArticle | null>(() => readBootstrappedArticle(slug))
   const [loading, setLoading] = useState(() => article === null)
@@ -77,8 +74,6 @@ export function ArticlePage() {
   const lightboxDialogRef = useRef<HTMLDialogElement>(null)
   const lightboxTriggerRef = useRef<HTMLImageElement | null>(null)
   const articleProseRef = useRef<HTMLElement>(null)
-  const f1PageRef = useRef<HTMLElement>(null)
-  useF1PageMotion(f1PageRef, `${style}-${slug}-${article?.updatedAt ?? loading}`)
 
   useEffect(() => {
     if (article?.slug === slug) {
@@ -189,7 +184,7 @@ export function ArticlePage() {
       return
     }
     if (!dialog.open) dialog.showModal()
-  }, [lightboxIndex, style])
+  }, [lightboxIndex])
 
   useEffect(() => {
     setShareStatus('')
@@ -288,107 +283,6 @@ export function ArticlePage() {
     } else {
       window.requestAnimationFrame(() => document.getElementById('main-content')?.focus())
     }
-  }
-
-  if (style === 'f1') {
-    return (
-      <SitePage compactHeader>
-        <main id="main-content" className="f1-article-reader" tabIndex={-1} ref={f1PageRef}>
-          {loading && <div className="f1-state f1-state--loading" aria-label="正在读取文章" aria-busy="true"><span /><span /><span /><strong>LOADING ARTICLE</strong></div>}
-          {!loading && notFound && (
-            <section className="f1-not-found" id="top">
-              <p className="f1-kicker"><span>DNF</span> ARTICLE NOT FOUND</p>
-              <strong>404</strong>
-              <h1>这篇文章<br />不在这里。</h1>
-              <Link className="f1-button f1-button--red" to="/articles"><span>回到文章列表</span><i>→</i></Link>
-            </section>
-          )}
-          {!loading && error && (
-            <section className="f1-not-found" id="top" role="alert">
-              <p className="f1-kicker"><span>ERR</span> ORIGIN OFFLINE</p>
-              <strong>503</strong>
-              <h1>暂时读不到<br />这篇文章。</h1>
-              <p>{error}</p>
-              <button type="button" className="f1-button f1-button--red" onClick={() => window.location.reload()}><span>重试</span><i>→</i></button>
-            </section>
-          )}
-          {!loading && article && (
-            <>
-              <header className={`f1-article-reader__hero${writingMode === 'vertical-rl' ? ' is-vertical' : ''}`} id="top">
-                <div className="f1-article-reader__head">
-                  <Link className="f1-article-reader__back" to="/articles">← ARTICLE INDEX</Link>
-                  <p className="f1-kicker"><span>ART</span> {formatArticleDate(article.publishedAt)} / ZONGRUI</p>
-                  <h1>
-                    <span className="f1-line-mask"><span data-f1-hero-line>{article.title}<i>.</i></span></span>
-                  </h1>
-                  <p className="f1-article-reader__deck" data-f1-hero-line>{article.summary}</p>
-                  <div className="f1-article-reader__meta" data-f1-hero-line>
-                    <span>BY ZONGRUI</span>
-                    <span>{article.readingMinutes} MIN READ</span>
-                    {viewCount !== null && <span>{readerCountFormatter.format(viewCount)} READERS</span>}
-                    <time dateTime={article.updatedAt}>UPDATED {formatArticleDate(article.updatedAt)}</time>
-                    {writingMode === 'vertical-rl' && <span>繁中直排 / 右至左</span>}
-                  </div>
-                  <div className="f1-article-reader__tags" data-f1-hero-line>
-                    {article.tags.map((tag) => <Link to={`/articles?tag=${encodeURIComponent(tag)}`} key={tag}>{tag}</Link>)}
-                  </div>
-                </div>
-                {article.coverUrl && <div className="f1-article-reader__cover" data-f1-media><img src={article.coverUrl} alt="" data-f1-parallax /><span aria-hidden="true">FEATURE IMAGE / {article.slug.toUpperCase()}</span></div>}
-              </header>
-
-              <div className={`f1-article-reader__layout${writingMode === 'vertical-rl' ? ' is-vertical' : ''}`}>
-                {writingMode === 'horizontal' && prepared.headings.length > 0 && (
-                  <aside className="f1-article-reader__toc" aria-label="文章目录" data-f1-reveal>
-                    <p>ON THIS PAGE</p>
-                    <ol>{prepared.headings.map((heading) => <li className={`is-level-${heading.level}`} key={heading.id}><a href={`#${heading.id}`}>{heading.text}</a></li>)}</ol>
-                  </aside>
-                )}
-                <article
-                  ref={articleProseRef}
-                  className={`article-prose f1-article-reader__prose${writingMode === 'vertical-rl' ? ' article-prose--vertical f1-article-reader__prose--vertical' : ''}`}
-                  lang={article.contentLanguage ?? (writingMode === 'vertical-rl' ? 'zh-Hant' : 'zh-CN')}
-                  onClick={handleArticleImageClick}
-                  onKeyDown={handleArticleImageKeyDown}
-                  dangerouslySetInnerHTML={{ __html: prepared.html }}
-                />
-              </div>
-
-              <section className="f1-article-reader__continue" aria-labelledby="f1-article-continue-title">
-                <header data-f1-reveal><p className="f1-kicker"><span>NXT</span> KEEP READING / SHARE</p><h2 id="f1-article-continue-title">继续阅读</h2></header>
-                {(adjacentArticles.newer || adjacentArticles.older) && (
-                  <nav aria-label="相邻文章">
-                    {adjacentArticles.newer && <Link to={`/articles/${adjacentArticles.newer.slug}`}><small>← 上一篇</small><strong>{adjacentArticles.newer.title}</strong></Link>}
-                    {adjacentArticles.older && <Link to={`/articles/${adjacentArticles.older.slug}`}><small>下一篇 →</small><strong>{adjacentArticles.older.title}</strong></Link>}
-                  </nav>
-                )}
-                <div className="f1-article-reader__share">
-                  <button type="button" onClick={() => void copyArticleLink()}>复制链接</button>
-                  {canNativeShare && <button type="button" onClick={() => void shareArticle()}>系统分享</button>}
-                  <p role="status" aria-live="polite">{shareStatus}</p>
-                </div>
-              </section>
-              <div className="f1-article-reader__comments"><Comments slug={article.slug} /></div>
-            </>
-          )}
-          <dialog
-            className="article-lightbox f1-article-lightbox"
-            ref={lightboxDialogRef}
-            aria-labelledby="f1-article-lightbox-title"
-            aria-describedby="f1-article-lightbox-description"
-            onClose={handleLightboxClose}
-            onKeyDown={handleLightboxKeyDown}
-            onClick={handleLightboxBackdropClick}
-          >
-            <header className="article-lightbox__header"><h2 id="f1-article-lightbox-title">文章图片</h2><button type="button" aria-label="关闭图片预览" onClick={closeLightbox}>关闭</button></header>
-            <figure className="article-lightbox__figure">
-              {lightboxImage && <img src={lightboxImage.src} alt={lightboxImage.alt} />}
-              <figcaption id="f1-article-lightbox-description" aria-live="polite"><span>{lightboxImage?.caption || lightboxImage?.alt || '文章图片'}</span><span>{lightboxImage ? `${(lightboxIndex ?? 0) + 1} / ${prepared.images.length}` : ''}</span></figcaption>
-            </figure>
-            {prepared.images.length > 1 && <nav className="article-lightbox__navigation" aria-label="切换文章图片"><button type="button" onClick={() => moveLightbox(-1)}>← 上一张</button><button type="button" onClick={() => moveLightbox(1)}>下一张 →</button></nav>}
-          </dialog>
-        </main>
-      </SitePage>
-    )
   }
 
   return (
