@@ -409,8 +409,8 @@ export function ActivityWalls({ embedded = false }: { embedded?: boolean }) {
             />
             <ActivityWall
               tone="codex"
-              kicker="CODEX / BLUE WALL"
-              title="Codex Blue Wall"
+              kicker="CODEX / PINK WALL"
+              title="Codex Pink Wall"
               weeks={codexWeeks}
               total={activity.codex.totalTurns}
               activeDays={activity.codex.activeDays}

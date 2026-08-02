@@ -33,7 +33,7 @@ flowchart LR
     end
 
     GH["GitHub Actions<br/>Green Wall"]
-    WIN["Windows Scheduled Task<br/>Codex Blue Wall"]
+    WIN["Windows Scheduled Task<br/>Codex Pink Wall"]
     DS["DeepSeek API<br/>简体转繁体"]
 
     U --> P
@@ -132,7 +132,7 @@ TipTap 正文支持 H2/H3、粗体、斜体、下划线、删除线、引用、�
 | 类别 | 技术与用途 |
 | --- | --- |
 | 服务端 | Python 3.14 标准库，无第三方依赖；`ThreadingHTTPServer` / `BaseHTTPRequestHandler` |
-| 存储 | GitHub Green Wall 与 Codex Blue Wall 分别保存为严格校验的 JSON；`fsync` + 原子替换，不使用数据库 |
+| 存储 | GitHub Green Wall 与 Codex Pink Wall 分别保存为严格校验的 JSON；`fsync` + 原子替换，不使用数据库 |
 | API 安全 | Bearer Token、固定 CORS 来源、请求体上限、严格 schema 重建 |
 | 公共读取 | ETag、60 秒浏览器缓存、stale 策略 |
 | GitHub 同步 | GitHub Actions、GitHub GraphQL API、GitHub CLI、`jq`、`curl`；每 6 小时同步一次 |

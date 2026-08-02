@@ -1,7 +1,6 @@
 (function () {
   var storageKey = 'zongrui-theme-preference';
-  var lightColor = '#ffffff';
-  var darkColor = '#111315';
+  var themeColor = '#d98aa4';
   var media = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 
   function readPreference() {
@@ -22,8 +21,8 @@
     root.dataset.themePreference = preference;
     root.dataset.resolvedTheme = resolved;
     root.style.colorScheme = resolved;
-    var themeColor = document.querySelector('meta[name="theme-color"]');
-    if (themeColor) themeColor.setAttribute('content', resolved === 'dark' ? darkColor : lightColor);
+    var themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeColorMeta) themeColorMeta.setAttribute('content', themeColor);
   }
 
   apply(readPreference());
