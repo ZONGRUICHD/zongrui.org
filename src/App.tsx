@@ -1,6 +1,8 @@
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { articleApi } from './articles/api'
 import { usePageMeta } from './articles/pageMeta'
 import { ActivityWalls } from './components/ActivityWalls'
+import { DEFAULT_PROFILE_BIO, ProfileBio } from './components/ProfileBio'
 import { Arrow, SitePage } from './components/SiteChrome'
 import { SiteVisitorCounter } from './components/SiteVisitorCounter'
 import { useHomeMotion } from './motion/useHomeMotion'
@@ -169,7 +171,18 @@ function WebsiteStories() {
 
 function App() {
   const pageRef = useRef<HTMLElement>(null)
+  const [bio, setBio] = useState(DEFAULT_PROFILE_BIO)
   useHomeMotion(pageRef)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    articleApi.profile()
+      .then(({ profile }) => {
+        if (!controller.signal.aborted && profile.bio.trim()) setBio(profile.bio)
+      })
+      .catch(() => undefined)
+    return () => controller.abort()
+  }, [])
 
   usePageMeta({
     title: 'ZongRui — Rust / RoboMaster / Linux',
@@ -200,8 +213,8 @@ function App() {
               <h1 id="hero-title">ZongRui</h1>
               <p>{'Programming in Ciallo～(∠・ω< )⌒★'}</p>
             </div>
-            <div className="hero-activity" data-hero-enter="walls">
-              <ActivityWalls embedded />
+            <div data-hero-enter="bio">
+              <ProfileBio bio={bio} className="hero-bio" idPrefix="home-profile" />
             </div>
           </div>
           <span className="motion-line hero__exit-line" aria-hidden="true" />
@@ -211,6 +224,9 @@ function App() {
         <ContactSection />
         <div className="home-visitors" data-scroll-reveal>
           <div data-reveal-item><SiteVisitorCounter visible /></div>
+        </div>
+        <div className="home-activity" data-scroll-reveal data-activity-root>
+          <div data-reveal-item><ActivityWalls /></div>
         </div>
       </main>
     </SitePage>

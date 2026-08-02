@@ -4,20 +4,27 @@ import { ConsoleGate } from '../articles/ConsoleLayout'
 const consoleAreas = [
   {
     index: '01',
+    label: 'PROFILE',
+    title: '简介',
+    description: '修改首页头像旁边的个人简介，并实时预览字号。',
+    href: '/console/profile',
+  },
+  {
+    index: '02',
     label: 'ARTICLES',
     title: '文章',
     description: '写作、排版、翻译、发布和修订记录。',
     href: '/console/articles',
   },
   {
-    index: '02',
+    index: '03',
     label: 'GALLERY',
     title: '图片',
     description: '上传图片，补充说明并控制公开顺序。',
     href: '/console/gallery',
   },
   {
-    index: '03',
+    index: '04',
     label: 'COMMENTS',
     title: '评论',
     description: '查看、隐藏、恢复或删除文章评论。',

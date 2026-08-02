@@ -90,9 +90,11 @@ class ResponsePolicyMiddleware(BaseHTTPMiddleware):
         elif path.startswith("/api/articles/v1/articles") or path in {
             "/api/articles/v1/tags",
             "/api/articles/v1/gallery",
+            "/api/articles/v1/profile",
             "/api/articles/v1/rss.xml",
             "/api/articles/v1/sitemap.xml",
             "/v1/gallery",
+            "/v1/profile",
         }:
             max_age = get_settings().public_cache_seconds
             response.headers.setdefault(

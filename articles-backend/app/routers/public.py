@@ -19,10 +19,19 @@ from ..schemas import (
     CommentEnvelope,
     PaginatedArticles,
     PaginatedComments,
+    SiteProfileEnvelope,
     TagsList,
 )
 from ..security import client_address, daily_source_hash, verify_turnstile
-from ..services import article_public, article_summary, aware, decode_cursor, encode_cursor
+from ..services import (
+    article_public,
+    article_summary,
+    aware,
+    decode_cursor,
+    encode_cursor,
+    get_or_create_site_profile,
+    site_profile_out,
+)
 
 
 router = APIRouter(tags=["public"])
@@ -128,6 +137,12 @@ def list_tags(db: Session = Depends(get_db)) -> dict[str, object]:
         .order_by(Tag.name)
     ).all()
     return {"items": [{"name": name, "slug": slug, "count": count} for name, slug, count in rows]}
+
+
+@router.get("/profile", response_model=SiteProfileEnvelope)
+def get_site_profile(db: Session = Depends(get_db)) -> dict[str, object]:
+    profile = get_or_create_site_profile(db)
+    return {"profile": site_profile_out(profile)}
 
 
 @router.get("/articles/{slug}", response_model=ArticleEnvelope)

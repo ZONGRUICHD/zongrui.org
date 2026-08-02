@@ -41,8 +41,9 @@ export function useHomeMotion(scope: RefObject<HTMLElement | null>) {
 
         const hero = root.querySelector<HTMLElement>('.hero')
         const heroProfile = root.querySelector<HTMLElement>('[data-hero-enter="profile"]')
+        const heroBio = root.querySelector<HTMLElement>('[data-hero-enter="bio"]')
         if (hero && heroProfile) {
-          gsap.timeline({ defaults: { ease: 'power3.out' } })
+          const timeline = gsap.timeline({ defaults: { ease: 'power3.out' } })
             .fromTo(hero, { autoAlpha: 0.94 }, { autoAlpha: 1, duration: 1.25 })
             .fromTo(
               heroProfile,
@@ -56,6 +57,21 @@ export function useHomeMotion(scope: RefObject<HTMLElement | null>) {
               { autoAlpha: 1, y: 0, duration: 0.75, stagger: 0.09 },
               0.24,
             )
+          if (heroBio) {
+            timeline
+              .fromTo(
+                heroBio,
+                { autoAlpha: 0, x: 56, rotateY: 7, transformPerspective: 900 },
+                { autoAlpha: 1, x: 0, rotateY: 0, duration: 1.05 },
+                0.16,
+              )
+              .fromTo(
+                heroBio.querySelectorAll('header, .profile-bio__text'),
+                { autoAlpha: 0, y: 24 },
+                { autoAlpha: 1, y: 0, duration: 0.75, stagger: 0.11 },
+                0.3,
+              )
+          }
         }
 
         const initTilt = (element: HTMLElement) => {
@@ -135,7 +151,7 @@ export function useHomeMotion(scope: RefObject<HTMLElement | null>) {
         }
 
         animateNewWalls()
-        const wallRoot = root.querySelector('.hero-activity') ?? root
+        const wallRoot = root.querySelector('[data-activity-root]') ?? root
         const wallObserver = new MutationObserver(animateNewWalls)
         wallObserver.observe(wallRoot, { childList: true, subtree: true })
         cleanups.push(() => wallObserver.disconnect())

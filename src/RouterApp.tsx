@@ -10,6 +10,7 @@ const ConsolePage = lazy(() => import('./articles/ConsolePage').then((module) =>
 const ConsoleCommentsPage = lazy(() => import('./articles/ConsoleCommentsPage').then((module) => ({ default: module.ConsoleCommentsPage })))
 const ArticleEditorPage = lazy(() => import('./articles/ArticleEditorPage').then((module) => ({ default: module.ArticleEditorPage })))
 const ConsoleDashboard = lazy(() => import('./console/ConsoleDashboard').then((module) => ({ default: module.ConsoleDashboard })))
+const ConsoleProfilePage = lazy(() => import('./console/ConsoleProfilePage').then((module) => ({ default: module.ConsoleProfilePage })))
 const ProjectsIndexPage = lazy(() => import('./projects/ProjectsIndexPage').then((module) => ({ default: module.ProjectsIndexPage })))
 const ProjectDetailPage = lazy(() => import('./projects/ProjectDetailPage').then((module) => ({ default: module.ProjectDetailPage })))
 const GalleryPage = lazy(() => import('./gallery/GalleryPage').then((module) => ({ default: module.GalleryPage })))
@@ -77,6 +78,7 @@ export default function RouterApp() {
           <Route path="/articles" element={<ArticleIndexPage />} />
           <Route path="/articles/console/*" element={<LegacyConsoleRedirect />} />
           <Route path="/console" element={<ConsoleDashboard />} />
+          <Route path="/console/profile" element={<ConsoleProfilePage />} />
           <Route path="/console/articles" element={<ConsolePage />} />
           <Route path="/console/gallery" element={<ConsoleGalleryPage />} />
           <Route path="/console/comments" element={<ConsoleCommentsPage />} />

@@ -438,6 +438,50 @@ test('public gallery pages use the same stale-capable edge cache', async () => {
   }
 })
 
+test('public homepage profile uses the short-lived edge cache', async () => {
+  const originalFetch = globalThis.fetch
+  const originalCaches = globalThis.caches
+  const stored = new Map()
+  const pending = []
+  let originCalls = 0
+
+  globalThis.caches = {
+    default: {
+      async match(request) {
+        return stored.get(new Request(request).url)?.clone()
+      },
+      async put(request, response) {
+        stored.set(new Request(request).url, response.clone())
+      },
+    },
+  }
+  globalThis.fetch = async (input) => {
+    originCalls += 1
+    assert.equal(new Request(input).url, 'http://127.0.0.1:18232/v1/profile')
+    return Response.json({ profile: { bio: '测试简介', updatedAt: '2026-08-02T00:00:00Z' } })
+  }
+
+  const cacheCtx = { waitUntil(promise) { pending.push(promise) } }
+  const request = new Request('https://zongrui.org/api/articles/v1/profile')
+  const cacheEnv = { ARTICLES_ORIGIN_URL: 'http://127.0.0.1:18232' }
+
+  try {
+    const miss = await worker.fetch(request, cacheEnv, cacheCtx)
+    assert.equal(miss.headers.get('X-ZR-Edge-Cache'), 'MISS')
+    assert.match(miss.headers.get('Cache-Control') ?? '', /s-maxage=60/)
+    await Promise.all(pending.splice(0))
+
+    const hit = await worker.fetch(request, cacheEnv, cacheCtx)
+    assert.equal(hit.headers.get('X-ZR-Edge-Cache'), 'HIT')
+    assert.equal(originCalls, 1)
+    assert.equal((await hit.json()).profile.bio, '测试简介')
+  } finally {
+    globalThis.fetch = originalFetch
+    if (originalCaches === undefined) delete globalThis.caches
+    else globalThis.caches = originalCaches
+  }
+})
+
 test('article writes invalidate every cached list query through a new cache generation', async () => {
   const originalFetch = globalThis.fetch
   const originalCaches = globalThis.caches
