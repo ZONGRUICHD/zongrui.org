@@ -48,7 +48,7 @@ export function applyThemePreference(preference: ThemePreference) {
   root.style.colorScheme = resolved
 
   const themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
-  if (themeColor) themeColor.content = resolved === 'dark' ? '#111315' : '#ffffff'
+  if (themeColor) themeColor.content = '#d98aa4'
 }
 
 function saveThemePreference(preference: ThemePreference) {
