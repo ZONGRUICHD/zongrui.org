@@ -115,9 +115,10 @@ function ConsoleLayout({ session, children }: { session: AuthSession; children: 
   return (
     <div className="console-app">
       <header className="console-header">
-        <Link className="console-brand" to="/console"><img src="/avatar.jpg" alt="" /><span><strong>ZongRui Console</strong><small>Articles / Gallery</small></span></Link>
+        <Link className="console-brand" to="/console"><img src="/avatar.jpg" alt="" /><span><strong>ZongRui Console</strong><small>Content / Site</small></span></Link>
         <nav aria-label="Console 导航">
           <NavLink end to="/console">概览</NavLink>
+          <NavLink to="/console/profile">简介</NavLink>
           <NavLink to="/console/articles">文章</NavLink>
           <NavLink to="/console/articles/new">写文章</NavLink>
           <NavLink to="/console/gallery">图片</NavLink>

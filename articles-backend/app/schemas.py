@@ -161,6 +161,25 @@ class VisitorStats(ApiModel):
     since: datetime | None
 
 
+class SiteProfileOut(ApiModel):
+    bio: str
+    updatedAt: datetime
+
+
+class SiteProfileUpdate(ApiModel):
+    bio: str = Field(min_length=1, max_length=320)
+
+    @field_validator("bio")
+    @classmethod
+    def clean_bio(cls, value: str) -> str:
+        value = value.replace("\r\n", "\n").replace("\r", "\n").strip()
+        if not value:
+            raise ValueError("bio must not be blank")
+        if any(ord(char) < 32 and char not in "\n\t" for char in value):
+            raise ValueError("bio contains unsupported control characters")
+        return value
+
+
 class MediaOut(ApiModel):
     id: str
     url: str
@@ -314,6 +333,10 @@ class CommentEnvelope(ApiModel):
 
 class MediaEnvelope(ApiModel):
     media: MediaOut
+
+
+class SiteProfileEnvelope(ApiModel):
+    profile: SiteProfileOut
 
 
 class TraditionalTranslationRequest(ApiModel):

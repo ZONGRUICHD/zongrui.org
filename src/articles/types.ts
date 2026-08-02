@@ -33,6 +33,11 @@ export type VisitorStats = {
   since: string | null
 }
 
+export type SiteProfile = {
+  bio: string
+  updatedAt: string
+}
+
 export type TiptapDocument = {
   type: 'doc'
   content?: Array<Record<string, unknown>>

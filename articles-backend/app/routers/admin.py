@@ -22,6 +22,8 @@ from ..schemas import (
     RevisionAction,
     RevisionList,
     ScheduleAction,
+    SiteProfileEnvelope,
+    SiteProfileUpdate,
     TraditionalTranslationOut,
     TraditionalTranslationRequest,
 )
@@ -35,15 +37,43 @@ from ..services import (
     encode_cursor,
     ensure_unique_slug,
     generated_slug,
+    get_or_create_site_profile,
     media_url,
     render_content,
     resolve_tags,
+    site_profile_out,
     verify_revision,
 )
 from ..translation import translate_to_traditional
 
 
 router = APIRouter(prefix="/admin", tags=["admin"])
+
+
+@router.get("/profile", response_model=SiteProfileEnvelope)
+def get_admin_site_profile(
+    _admin: AdminSession = Depends(get_admin_session),
+    db: Session = Depends(get_db),
+) -> dict[str, object]:
+    profile = get_or_create_site_profile(db)
+    return {"profile": site_profile_out(profile)}
+
+
+@router.put("/profile", response_model=SiteProfileEnvelope)
+def update_admin_site_profile(
+    payload: SiteProfileUpdate,
+    response: Response,
+    _admin: AdminSession = Depends(require_csrf),
+    db: Session = Depends(get_db),
+) -> dict[str, object]:
+    profile = get_or_create_site_profile(db)
+    profile.bio = payload.bio
+    profile.updated_at = datetime.now(timezone.utc)
+    audit(db, "site_profile.update", "site_profile", "1", length=len(payload.bio))
+    db.commit()
+    db.refresh(profile)
+    response.headers["X-ZR-Cache-Invalidate"] = "/v1/profile,/"
+    return {"profile": site_profile_out(profile)}
 
 
 @router.post("/translate/traditional", response_model=TraditionalTranslationOut)

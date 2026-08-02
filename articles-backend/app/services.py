@@ -10,11 +10,21 @@ from typing import Any
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .config import Settings
 from .content import RenderedContent, render_document
-from .models import Article, ArticleRevision, AuditLog, Media, SlugRedirect, Tag
+from .models import (
+    DEFAULT_SITE_BIO,
+    Article,
+    ArticleRevision,
+    AuditLog,
+    Media,
+    SiteProfile,
+    SlugRedirect,
+    Tag,
+)
 
 
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -24,6 +34,31 @@ def aware(value: datetime | None) -> datetime | None:
     if value is None:
         return None
     return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+
+
+def get_or_create_site_profile(db: Session) -> SiteProfile:
+    profile = db.get(SiteProfile, 1)
+    if profile is not None:
+        return profile
+
+    profile = SiteProfile(id=1, bio=DEFAULT_SITE_BIO)
+    db.add(profile)
+    try:
+        db.commit()
+    except IntegrityError:
+        # A simultaneous first request may have created the singleton already.
+        db.rollback()
+        profile = db.get(SiteProfile, 1)
+        if profile is None:
+            raise
+    return profile
+
+
+def site_profile_out(profile: SiteProfile) -> dict[str, Any]:
+    return {
+        "bio": profile.bio,
+        "updatedAt": aware(profile.updated_at),
+    }
 
 
 def normalise_slug(value: str) -> str:

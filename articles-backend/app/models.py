@@ -23,6 +23,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .database import Base
 
 
+DEFAULT_SITE_BIO = "平时主要写 Rust，做 RoboMaster 控制，也会管 Linux 服务器和交换机。缺什么工具，就自己补一个。"
+
+
 def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -211,3 +214,12 @@ class ArticleReader(Base):
     # Article digests use an article-specific HMAC context, so they cannot be
     # joined to the site-wide digest or to readers of a different article.
     visitor_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+
+
+class SiteProfile(Base):
+    __tablename__ = "site_profile"
+    __table_args__ = (CheckConstraint("id = 1", name="ck_site_profile_singleton"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
+    bio: Mapped[str] = mapped_column(Text, default=DEFAULT_SITE_BIO)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)

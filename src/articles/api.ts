@@ -10,6 +10,7 @@ import type {
   MediaItem,
   PublicArticle,
   PublicArticleSummary,
+  SiteProfile,
   Tag,
   TraditionalTranslationInput,
   TraditionalTranslationResult,
@@ -90,6 +91,10 @@ export const articleApi = {
     return request<{ items: Tag[] }>('/tags')
   },
 
+  profile() {
+    return request<{ profile: SiteProfile }>('/profile')
+  },
+
   recordSiteVisit() {
     return request<VisitorStats>('/stats/site', { method: 'POST' })
   },
@@ -125,6 +130,17 @@ export const articleApi = {
   adminList(status?: string, cursor?: string) {
     const path = appendParams('/admin/articles', { status, cursor, limit: 50 })
     return request<CursorPage<AdminArticleSummary>>(path.slice(API_BASE.length))
+  },
+
+  adminProfile() {
+    return request<{ profile: SiteProfile }>('/admin/profile')
+  },
+
+  updateProfile(bio: string) {
+    return request<{ profile: SiteProfile }>('/admin/profile', {
+      method: 'PUT',
+      body: JSON.stringify({ bio }),
+    })
   },
 
   adminGet(id: string) {

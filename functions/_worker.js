@@ -389,6 +389,7 @@ function isPublicCacheableApi(request) {
     path === '/v1/articles'
     || path.startsWith('/v1/articles/')
     || path === '/v1/gallery'
+    || path === '/v1/profile'
     || path === '/v1/tags'
     || path === '/v1/rss.xml'
     || path === '/v1/sitemap.xml'

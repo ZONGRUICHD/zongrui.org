@@ -1832,6 +1832,263 @@ img {
   }
 }
 
+/* Editable homepage profile and bottom activity archive. */
+
+.hero__inner {
+  grid-template-columns: minmax(15rem, 0.34fr) minmax(0, 0.66fr);
+}
+
+[data-hero-enter='bio'] {
+  min-width: 0;
+  align-self: center;
+  transform-style: preserve-3d;
+}
+
+.profile-bio {
+  --profile-bio-size: clamp(1.35rem, 2.35vw, 2.45rem);
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: clamp(18rem, 35vw, 27rem);
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(1.6rem, 3vw, 2.8rem);
+  overflow: hidden;
+  color: #fff;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    rgba(5, 35, 76, 0.42);
+  background-size: 2.5rem 2.5rem, 2.5rem 2.5rem, auto;
+  border-top: 0.3rem solid #fff;
+  border-bottom: 0.3rem solid var(--rpi-red);
+  box-shadow: 0 1.8rem 4.5rem rgba(4, 24, 55, 0.28);
+}
+
+.profile-bio::after {
+  position: absolute;
+  right: -8rem;
+  bottom: -11rem;
+  width: 24rem;
+  height: 24rem;
+  content: '';
+  pointer-events: none;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 50%;
+}
+
+.profile-bio--display { --profile-bio-size: clamp(2.55rem, 5.3vw, 5.35rem); }
+.profile-bio--large { --profile-bio-size: clamp(2rem, 4vw, 4rem); }
+.profile-bio--medium { --profile-bio-size: clamp(1.55rem, 3vw, 3rem); }
+.profile-bio--compact { --profile-bio-size: clamp(1.18rem, 2vw, 2rem); }
+
+.profile-bio__header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.profile-bio__header p,
+.profile-bio__header h2 {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  line-height: 1.25;
+  letter-spacing: 0.12em;
+}
+
+.profile-bio__header p { color: #ff91b1; }
+.profile-bio__header h2 { color: rgba(255, 255, 255, 0.76); }
+
+.profile-bio__text {
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+  margin: clamp(2rem, 5vw, 4.5rem) 0 0;
+  font-size: var(--profile-bio-size);
+  font-weight: 760;
+  line-height: 1.18;
+  letter-spacing: -0.055em;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  text-wrap: pretty;
+}
+
+.home-activity {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 0.35rem solid var(--rpi-red);
+}
+
+.home-activity .activity-wall {
+  overflow: hidden;
+  transition: border-color 280ms ease, box-shadow 280ms ease;
+}
+
+.home-activity .activity-wall:hover,
+.home-activity .activity-wall:focus-within {
+  box-shadow: 0 1.7rem 3.8rem color-mix(in srgb, var(--rpi-blue) 18%, transparent);
+}
+
+/* Homepage profile editor. */
+
+.console-profile__layout {
+  display: grid;
+  grid-template-columns: minmax(20rem, 0.82fr) minmax(0, 1.18fr);
+  gap: clamp(1.5rem, 4vw, 3rem);
+  align-items: start;
+}
+
+.console-profile__form {
+  padding: clamp(1.5rem, 3vw, 2.4rem);
+  background: var(--paper);
+  border-top: 0.32rem solid var(--rpi-red);
+  box-shadow: 0 1.2rem 2.8rem var(--shadow-color);
+}
+
+.console-profile__form-heading {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.console-profile__form-heading .articles-kicker { margin-bottom: 0.55rem; }
+
+.console-profile__form-heading h2 {
+  margin: 0;
+  font-size: clamp(1.75rem, 3vw, 2.6rem);
+  letter-spacing: -0.055em;
+}
+
+.console-profile__form-heading output {
+  color: var(--muted);
+  font: 700 0.62rem/1 var(--font-mono);
+  white-space: nowrap;
+}
+
+.console-profile__form > label {
+  display: block;
+  margin-bottom: 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 760;
+}
+
+.console-profile__form textarea {
+  width: 100%;
+  min-height: 15rem;
+  padding: 1rem;
+  resize: vertical;
+  color: var(--ink);
+  background: var(--paper-soft);
+  border: 1px solid var(--line);
+  font: 650 1rem/1.8 var(--font-mono);
+}
+
+.console-profile__form textarea:focus-visible {
+  outline: 3px solid var(--rpi-blue);
+  outline-offset: 2px;
+}
+
+.console-profile__form > p {
+  margin: 0.8rem 0 0;
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.7;
+}
+
+.console-profile__actions {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+}
+
+.console-profile__message {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  color: var(--ink);
+  background: var(--notice);
+  border-left: 0.25rem solid var(--rpi-blue);
+  font-size: 0.72rem;
+}
+
+.console-profile__message--error { border-left-color: var(--rpi-red); }
+
+.console-profile__preview {
+  position: sticky;
+  top: 7rem;
+  min-width: 0;
+  padding: clamp(1rem, 2.5vw, 2rem);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    var(--rpi-blue);
+  background-size: 3rem 3rem, 3rem 3rem, auto;
+  border-bottom: 0.32rem solid var(--rpi-red);
+}
+
+.console-profile__preview > .articles-kicker { color: #ff91b1; }
+
+.console-profile__bio {
+  min-height: clamp(24rem, 42vw, 34rem);
+  background-color: rgba(4, 28, 64, 0.48);
+}
+
+.console-dashboard__grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 1150px) {
+  .console-dashboard__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px) {
+  .console-profile__layout { grid-template-columns: minmax(0, 1fr); }
+  .console-profile__preview { position: static; }
+}
+
+@media (max-width: 860px) {
+  .hero__inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.5rem;
+  }
+
+  [data-hero-enter='bio'] {
+    width: min(100%, 46rem);
+    justify-self: center;
+  }
+}
+
+@media (max-width: 680px) {
+  .profile-bio {
+    min-height: 20rem;
+    padding: 1.35rem;
+  }
+
+  .profile-bio--display { --profile-bio-size: clamp(2.15rem, 12vw, 3.6rem); }
+  .profile-bio--large { --profile-bio-size: clamp(1.8rem, 9vw, 3rem); }
+  .profile-bio--medium { --profile-bio-size: clamp(1.45rem, 7vw, 2.3rem); }
+  .profile-bio--compact { --profile-bio-size: clamp(1.08rem, 5.1vw, 1.55rem); }
+
+  .profile-bio__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .profile-bio__text { margin-top: 2rem; }
+  .console-dashboard__grid { grid-template-columns: minmax(0, 1fr); }
+  .console-profile__form { padding: 1.25rem; }
+  .console-profile__preview { padding: 0.75rem; }
+  .console-profile__bio { min-height: 22rem; }
+}
+
 @media (max-width: 860px) {
   .masthead,
   .site-nav__inner,
