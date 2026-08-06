@@ -236,7 +236,6 @@ function ActivityWall({
       className="activity-wall"
       data-tone={tone}
       data-motion-wall
-      data-pointer-tilt
       aria-labelledby={`${tone}-wall-title`}
     >
       <header className="activity-wall__header">

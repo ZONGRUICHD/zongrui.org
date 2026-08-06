@@ -7,7 +7,11 @@ const HOME_SECTIONS = ['top', 'articles', 'web', 'contact'] as const
 type HomeSection = (typeof HOME_SECTIONS)[number]
 
 export function Arrow() {
-  return <span aria-hidden="true">↗</span>
+  return (
+    <svg className="ui-arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M7 17 17 7M9 7h8v8" />
+    </svg>
+  )
 }
 
 export function BrandMark() {

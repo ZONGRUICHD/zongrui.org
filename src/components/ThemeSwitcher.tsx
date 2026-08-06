@@ -66,7 +66,9 @@ export function ThemeSwitcher({ className = '' }: ThemeSwitcherProps) {
       {preferences.map(({ value, label }) => (
         <MaterialIconButton
           className={`theme-switcher__option${preference === value ? ' is-active' : ''}`}
-          tonal={preference === value}
+          tonal
+          toggle
+          selected={preference === value}
           type="button"
           key={value}
           aria-pressed={preference === value}

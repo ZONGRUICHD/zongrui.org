@@ -1,0 +1,14 @@
+/*
+ * One deterministic cascade for every route.
+ *
+ * Route styles used to be imported by lazy React chunks. Their arrival order
+ * could therefore overtake the Material theme and change shapes/colors after
+ * navigation. Keep the legacy composition first, route layouts second, and
+ * the Material design-system contract last regardless of chunk timing.
+ */
+@layer legacy, routes, material;
+
+@import url('./styles.css') layer(legacy);
+@import url('./projects/projects.css') layer(routes);
+@import url('./gallery/gallery.css') layer(routes);
+@import url('./material-you.css') layer(material);

@@ -32,7 +32,10 @@ export function useHomeMotion(scope: RefObject<HTMLElement | null>) {
         const { motionOK, finePointer } = context.conditions as MotionConditions
         const cleanups: Array<() => void> = []
 
-        if (!motionOK) {
+        // Touch layouts must be immediately readable. The previous horizontal
+        // entrance transforms temporarily pushed the two hero cards outside
+        // the narrow viewport and made the first screen look empty/overlapped.
+        if (!motionOK || !finePointer) {
           gsap.set(root.querySelectorAll('[data-hero-enter], [data-scroll-reveal], [data-motion-wall], .motion-line'), {
             clearProps: 'all',
           })
@@ -44,82 +47,35 @@ export function useHomeMotion(scope: RefObject<HTMLElement | null>) {
         const heroBio = root.querySelector<HTMLElement>('[data-hero-enter="bio"]')
         if (hero && heroProfile) {
           const timeline = gsap.timeline({ defaults: { ease: 'power3.out' } })
-            .fromTo(hero, { autoAlpha: 0.94 }, { autoAlpha: 1, duration: 1.25 })
+            .fromTo(hero, { autoAlpha: 0.98 }, { autoAlpha: 1, duration: 0.3 })
             .fromTo(
               heroProfile,
-              { autoAlpha: 0, x: -56, rotateY: -7, transformPerspective: 900 },
-              { autoAlpha: 1, x: 0, rotateY: 0, duration: 1.05 },
-              0.12,
+              { autoAlpha: 0, y: 12 },
+              { autoAlpha: 1, y: 0, duration: 0.36 },
+              0.04,
             )
             .fromTo(
               heroProfile.querySelectorAll('img, h1, p'),
-              { autoAlpha: 0, y: 26 },
-              { autoAlpha: 1, y: 0, duration: 0.75, stagger: 0.09 },
-              0.24,
+              { autoAlpha: 0, y: 8 },
+              { autoAlpha: 1, y: 0, duration: 0.24, stagger: 0.04 },
+              0.1,
             )
           if (heroBio) {
             timeline
               .fromTo(
                 heroBio,
-                { autoAlpha: 0, x: 56, rotateY: 7, transformPerspective: 900 },
-                { autoAlpha: 1, x: 0, rotateY: 0, duration: 1.05 },
-                0.16,
+                { autoAlpha: 0, y: 12 },
+                { autoAlpha: 1, y: 0, duration: 0.36 },
+                0.06,
               )
               .fromTo(
                 heroBio.querySelectorAll('header, .profile-bio__text'),
-                { autoAlpha: 0, y: 24 },
-                { autoAlpha: 1, y: 0, duration: 0.75, stagger: 0.11 },
-                0.3,
+                { autoAlpha: 0, y: 8 },
+                { autoAlpha: 1, y: 0, duration: 0.24, stagger: 0.05 },
+                0.12,
               )
           }
         }
-
-        const initTilt = (element: HTMLElement) => {
-          if (!finePointer || element.dataset.tiltReady === 'true') return
-          element.dataset.tiltReady = 'true'
-          const rotateX = gsap.quickTo(element, 'rotationX', { duration: 0.5, ease: 'power3.out' })
-          const rotateY = gsap.quickTo(element, 'rotationY', { duration: 0.5, ease: 'power3.out' })
-          const moveX = gsap.quickTo(element, 'x', { duration: 0.5, ease: 'power3.out' })
-          const moveY = gsap.quickTo(element, 'y', { duration: 0.5, ease: 'power3.out' })
-          let frame = 0
-          let latestEvent: PointerEvent | null = null
-
-          const render = () => {
-            frame = 0
-            if (!latestEvent) return
-            const bounds = element.getBoundingClientRect()
-            const horizontal = (latestEvent.clientX - bounds.left) / bounds.width - 0.5
-            const vertical = (latestEvent.clientY - bounds.top) / bounds.height - 0.5
-            rotateX(vertical * -4.5)
-            rotateY(horizontal * 5.5)
-            moveX(horizontal * 5)
-            moveY(vertical * 5)
-          }
-          const move = (event: PointerEvent) => {
-            latestEvent = event
-            if (!frame) frame = window.requestAnimationFrame(render)
-          }
-          const leave = () => {
-            latestEvent = null
-            window.cancelAnimationFrame(frame)
-            frame = 0
-            rotateX(0)
-            rotateY(0)
-            moveX(0)
-            moveY(0)
-          }
-
-          element.addEventListener('pointermove', move)
-          element.addEventListener('pointerleave', leave)
-          cleanups.push(() => {
-            window.cancelAnimationFrame(frame)
-            element.removeEventListener('pointermove', move)
-            element.removeEventListener('pointerleave', leave)
-            delete element.dataset.tiltReady
-          })
-        }
-
-        root.querySelectorAll<HTMLElement>('[data-pointer-tilt]:not([data-motion-wall])').forEach(initTilt)
 
         const animateNewWalls = () => {
           const walls = Array.from(root.querySelectorAll<HTMLElement>('[data-motion-wall]:not([data-motion-animated])'))
@@ -129,21 +85,15 @@ export function useHomeMotion(scope: RefObject<HTMLElement | null>) {
             walls,
             {
               autoAlpha: 0,
-              x: (index) => 92 + index * 28,
-              y: (index) => index * 20,
-              rotateY: -5,
-              transformPerspective: 1100,
+              y: 12,
             },
             {
               autoAlpha: 1,
-              x: 0,
               y: 0,
-              rotateY: 0,
-              duration: 1.05,
-              stagger: 0.16,
+              duration: 0.32,
+              stagger: 0.06,
               ease: 'power3.out',
               onComplete: () => {
-                walls.forEach(initTilt)
                 scheduleRefresh()
               },
             },
@@ -161,13 +111,14 @@ export function useHomeMotion(scope: RefObject<HTMLElement | null>) {
           const targets = children.length ? children : [section]
           gsap.fromTo(
             targets,
-            { autoAlpha: 0, y: 58 },
+            { autoAlpha: 0, y: 16 },
             {
               autoAlpha: 1,
               y: 0,
-              duration: 0.95,
-              stagger: 0.1,
+              duration: 0.36,
+              stagger: 0.06,
               ease: 'power3.out',
+              clearProps: 'transform',
               scrollTrigger: {
                 trigger: section,
                 start: 'clamp(top 84%)',

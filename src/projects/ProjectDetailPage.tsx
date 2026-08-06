@@ -4,7 +4,6 @@ import { usePageMeta } from '../articles/pageMeta'
 import { useProjectReveals } from './projectMotion'
 import { findTechnicalProject } from './projectData'
 import { ProjectVisual } from './ProjectVisuals'
-import './projects.css'
 
 export function ProjectDetailPage() {
   const { slug } = useParams<{ slug: string }>()

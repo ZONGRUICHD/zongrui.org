@@ -80,7 +80,6 @@ function ContactSection() {
               rel="noreferrer"
               key={contact.label}
               data-reveal-item
-              data-pointer-tilt
             >
               <span className="contact-card__index">0{index + 1}</span>
               <span className="contact-card__mark">{contact.icon}</span>
@@ -122,7 +121,6 @@ function WebsiteStories() {
           target="_blank"
           rel="noreferrer"
           data-reveal-item
-          data-pointer-tilt
         >
           <div className="site-capture site-capture--memory">
             <img
@@ -146,7 +144,6 @@ function WebsiteStories() {
           target="_blank"
           rel="noreferrer"
           data-reveal-item
-          data-pointer-tilt
         >
           <div className="site-capture site-capture--notes">
             <img
@@ -208,7 +205,7 @@ function App() {
             <span className="hero__ambient-line" data-scroll-drift />
           </div>
           <div className="hero__inner">
-            <div className="hero-profile" data-hero-enter="profile" data-pointer-tilt>
+            <div className="hero-profile" data-hero-enter="profile">
               <img className="hero-profile__avatar" src="/avatar.jpg" alt="ZongRui 的企鹅头像" />
               <h1 id="hero-title">ZongRui</h1>
               <p>{'Programming in Ciallo～(∠・ω< )⌒★'}</p>

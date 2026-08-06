@@ -20,18 +20,60 @@ const ConsoleGalleryPage = lazy(() => import('./gallery/ConsoleGalleryPage').the
 function ScrollManager() {
   const { pathname, hash } = useLocation()
   useEffect(() => {
-    if (hash) {
-      window.requestAnimationFrame(() => document.getElementById(hash.slice(1))?.scrollIntoView())
-    } else {
-      window.scrollTo({ top: 0, left: 0 })
-    }
-    window.requestAnimationFrame(() => {
-      const main = document.getElementById('main-content')
-      if (main) {
-        main.tabIndex = -1
-        main.focus({ preventScroll: true })
+    let frame = 0
+    let attempts = 0
+    let temporaryFocusTarget: HTMLElement | null = null
+    let focusedTarget: HTMLElement | null = null
+
+    const focusTarget = (target: HTMLElement) => {
+      if (!target.hasAttribute('tabindex')) {
+        target.tabIndex = -1
+        temporaryFocusTarget = target
       }
-    })
+      focusedTarget = target
+      target.classList.add('route-focus-target')
+      target.focus({ preventScroll: true })
+    }
+
+    if (hash) {
+      const rawHash = hash.slice(1)
+      let hashTarget = rawHash
+      try {
+        hashTarget = decodeURIComponent(rawHash)
+      } catch {
+        // A malformed percent escape must not break the whole route.
+      }
+      const revealHashTarget = () => {
+        const target = document.getElementById(hashTarget)
+        if (target) {
+          target.scrollIntoView({ block: 'start' })
+          focusTarget(target)
+          return
+        }
+        attempts += 1
+        // Lazy routes may need more than a handful of frames on a cold mobile
+        // load. Keep looking briefly so direct /#section links remain reliable.
+        if (attempts < 120) frame = window.requestAnimationFrame(revealHashTarget)
+      }
+      frame = window.requestAnimationFrame(revealHashTarget)
+    } else {
+      const revealMainTarget = () => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+        const main = document.getElementById('main-content')
+        if (main) {
+          focusTarget(main)
+          return
+        }
+        attempts += 1
+        if (attempts < 120) frame = window.requestAnimationFrame(revealMainTarget)
+      }
+      frame = window.requestAnimationFrame(revealMainTarget)
+    }
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame)
+      focusedTarget?.classList.remove('route-focus-target')
+      temporaryFocusTarget?.removeAttribute('tabindex')
+    }
   }, [hash, pathname])
   return null
 }

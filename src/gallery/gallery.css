@@ -480,7 +480,8 @@
   .gallery-loading span { animation: none; }
 }
 
-/* Material You route layer; kept last because this stylesheet is lazy-loaded. */
+/* Route-local Material mappings. app.css keeps this routes layer below the
+   shared material layer regardless of navigation order. */
 .gallery-page {
   color: var(--md-sys-color-on-surface);
   background: var(--md-sys-color-surface);

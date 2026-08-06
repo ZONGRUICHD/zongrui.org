@@ -757,21 +757,7 @@
 .project-not-found h1 { max-width: 8ch; margin: 2rem 0; font-size: clamp(3.6rem, 9vw, 8rem); line-height: 0.88; letter-spacing: -0.08em; }
 .project-not-found a { display: inline-block; padding: 1rem 1.25rem; color: var(--on-dark); background: var(--ink); border-radius: 999px; font-size: 0.7rem; }
 
-/* Theme and responsive behavior */
-
-html[data-theme='dark'] .project-index-card__visual,
-html[data-theme='dark'] .project-detail__visual { border: 1px solid rgba(255, 255, 255, 0.15); }
-
-html[data-theme='dark'] .project-index-card__glow {
-  background: radial-gradient(circle 18rem at var(--project-pointer-x) var(--project-pointer-y), rgba(245, 180, 202, 0.16), transparent 70%);
-}
-
-html[data-theme='dark'] .project-detail__hero {
-  background:
-    radial-gradient(circle at 82% 34%, rgba(245, 180, 202, 0.09), transparent 27rem),
-    linear-gradient(140deg, transparent 0 74%, rgba(245, 180, 202, 0.05) 74%),
-    var(--hero-grey);
-}
+/* Responsive behavior */
 
 @media (max-width: 980px) {
   .projects-index__heading,
@@ -858,8 +844,8 @@ html[data-theme='dark'] .project-detail__hero {
   }
 }
 
-/* Material You route layer. These declarations intentionally live after the
-   route stylesheet so lazy-loaded CSS cannot replace the shared M3 tokens. */
+/* Route-local Material mappings. app.css imports this file into the routes
+   layer, below the shared material layer, so the global shape contract wins. */
 .project-detail,
 .project-not-found {
   color: var(--md-sys-color-on-surface);

@@ -49,6 +49,7 @@ type MaterialIconButtonProps = {
   className?: string
   disabled?: boolean
   selected?: boolean
+  toggle?: boolean
   tonal?: boolean
   type?: 'button' | 'submit' | 'reset'
   href?: string

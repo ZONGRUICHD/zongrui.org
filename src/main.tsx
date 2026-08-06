@@ -4,8 +4,7 @@ import '@fontsource-variable/jetbrains-mono/index.css'
 import RouterApp from './RouterApp'
 import './material/material-components'
 import { initializeMaterialTheme } from './material/theme'
-import './styles.css'
-import './material-you.css'
+import './app.css'
 
 initializeMaterialTheme()
 
