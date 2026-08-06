@@ -857,3 +857,187 @@ html[data-theme='dark'] .project-detail__hero {
     transform: none !important;
   }
 }
+
+/* Material You route layer. These declarations intentionally live after the
+   route stylesheet so lazy-loaded CSS cannot replace the shared M3 tokens. */
+.project-detail,
+.project-not-found {
+  color: var(--md-sys-color-on-surface);
+  background: var(--md-sys-color-surface);
+}
+
+.project-detail {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.project-detail__hero,
+.project-architecture,
+.project-stack,
+.project-implementation,
+.project-boundaries,
+.project-detail__exit {
+  width: min(100%, 90rem);
+  margin-inline: auto;
+  overflow: hidden;
+  border-radius: var(--md-sys-shape-corner-xl);
+}
+
+.project-detail__hero {
+  color: var(--md-sys-color-on-primary-container);
+  background: var(--md-sys-color-primary-container);
+}
+
+.project-detail__hero::before,
+.project-detail__hero::after {
+  opacity: 0.18;
+}
+
+.project-detail__visual {
+  background-color: var(--md-sys-color-surface-container-high);
+  border: 0;
+  border-radius: var(--md-sys-shape-corner-lg);
+}
+
+.project-detail--network .project-detail__visual {
+  background-color: var(--md-sys-color-inverse-surface);
+}
+
+.project-detail__metrics {
+  color: var(--md-sys-color-on-secondary-container);
+  background: var(--md-sys-color-secondary-container);
+  border-radius: var(--md-sys-shape-corner-lg);
+}
+
+.project-detail__metrics div {
+  border-color: var(--md-sys-color-outline-variant);
+}
+
+.project-detail__metrics span,
+.project-detail__summary,
+.project-detail__statement {
+  color: inherit;
+  opacity: 0.78;
+}
+
+.project-detail__links a,
+.project-detail__exit a,
+.project-detail__exit a + a {
+  color: var(--md-sys-color-on-primary);
+  background: var(--md-sys-color-primary);
+  border: 0;
+  border-radius: var(--md-sys-shape-corner-full);
+}
+
+.project-architecture {
+  color: var(--md-sys-color-on-surface);
+  background: var(--md-sys-color-surface-container-low);
+}
+
+.project-architecture .projects-kicker,
+.project-implementation .projects-kicker,
+.project-implementation__list article > span {
+  color: var(--md-sys-color-primary);
+}
+
+.project-architecture__flow::before {
+  background: var(--md-sys-color-outline-variant);
+}
+
+.project-architecture__flow li {
+  color: var(--md-sys-color-on-surface);
+  background: var(--md-sys-color-surface-container-high);
+  border: 0;
+  border-radius: var(--md-sys-shape-corner-lg);
+}
+
+.project-architecture__flow p,
+.project-implementation__list p {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.project-stack {
+  background: var(--md-sys-color-surface-container-low);
+}
+
+.project-stack__grid {
+  gap: 0.75rem;
+  border: 0;
+}
+
+.project-stack__grid article {
+  background: var(--md-sys-color-surface-container-high);
+  border: 0;
+  border-radius: var(--md-sys-shape-corner-lg);
+}
+
+.project-implementation {
+  color: var(--md-sys-color-on-tertiary-container);
+  background: var(--md-sys-color-tertiary-container);
+}
+
+.project-implementation__list {
+  display: grid;
+  gap: 0.75rem;
+  border: 0;
+}
+
+.project-implementation__list article {
+  padding: 1.5rem;
+  background: color-mix(in srgb, var(--md-sys-color-surface) 52%, transparent);
+  border: 0;
+  border-radius: var(--md-sys-shape-corner-lg);
+}
+
+.project-boundaries {
+  background: var(--md-sys-color-surface-container);
+}
+
+.project-boundaries ul {
+  display: grid;
+  gap: 0.5rem;
+  border: 0;
+}
+
+.project-boundaries li {
+  padding: 1.25rem;
+  background: var(--md-sys-color-surface-container-high);
+  border: 0;
+  border-radius: var(--md-sys-shape-corner-md);
+}
+
+.project-detail__exit {
+  color: var(--md-sys-color-on-secondary-container);
+  background: var(--md-sys-color-secondary-container);
+}
+
+.project-detail__exit a + a {
+  color: var(--md-sys-color-on-secondary-container);
+  background: transparent;
+  border: 1px solid var(--md-sys-color-outline);
+}
+
+.project-not-found {
+  width: min(calc(100% - 2rem), 90rem);
+  min-height: 60vh;
+  margin: 1rem auto;
+  padding: clamp(2rem, 7vw, 6rem);
+  background: var(--md-sys-color-error-container);
+  border-radius: var(--md-sys-shape-corner-xl);
+}
+
+@media (max-width: 760px) {
+  .project-detail {
+    padding: 0.75rem;
+  }
+
+  .project-detail__hero,
+  .project-architecture,
+  .project-stack,
+  .project-implementation,
+  .project-boundaries,
+  .project-detail__exit {
+    border-radius: var(--md-sys-shape-corner-lg);
+  }
+}

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import '@material/web/button/filled-tonal-button.js'
 import { SitePage } from '../components/SiteChrome'
+import { MaterialButton } from '../material/MaterialControls'
 import { usePageMeta } from '../articles/pageMeta'
 import { galleryApi } from './api'
 import { GalleryLightbox } from './GalleryLightbox'
@@ -85,7 +87,7 @@ export function GalleryPage() {
             ))}
           </div>
           {error && images.length > 0 && <p className="gallery-inline-error" role="alert">{error}</p>}
-          {nextCursor && <button className="gallery-more" type="button" onClick={loadMore} disabled={loadingMore}>{loadingMore ? '正在显影…' : '继续往后看 ↓'}</button>}
+          {nextCursor && <MaterialButton className="gallery-more" variant="tonal" type="button" onClick={loadMore} disabled={loadingMore}>{loadingMore ? '正在显影…' : '继续往后看 ↓'}</MaterialButton>}
         </section>
         <GalleryLightbox images={images} index={selected} onChange={setSelected} />
       </main>

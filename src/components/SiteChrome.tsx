@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { MaterialButton, MaterialIconButton } from '../material/MaterialControls'
 import { ThemeSwitcher } from './ThemeSwitcher'
 
 const HOME_SECTIONS = ['top', 'articles', 'web', 'contact'] as const
@@ -24,7 +25,7 @@ type SiteHeaderProps = {
 export function SiteHeader({ compact = false }: SiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [activeSection, setActiveSection] = useState<HomeSection | ''>('')
-  const menuButtonRef = useRef<HTMLButtonElement>(null)
+  const menuButtonRef = useRef<HTMLElement>(null)
   const location = useLocation()
 
   useEffect(() => {
@@ -106,11 +107,11 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
         </Link>
         <div className="masthead-actions">
           <ThemeSwitcher className="masthead-theme-switcher" />
-          <a className="masthead-github" href="https://github.com/zongruichd" target="_blank" rel="noreferrer">
+          <MaterialButton className="masthead-github" variant="text" href="https://github.com/zongruichd" target="_blank" rel="noreferrer">
             GitHub <Arrow />
-          </a>
+          </MaterialButton>
         </div>
-        <button
+        <MaterialIconButton
           ref={menuButtonRef}
           className="menu-button"
           type="button"
@@ -119,10 +120,12 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
           aria-label={menuOpen ? '关闭导航菜单' : '打开导航菜单'}
           onClick={() => setMenuOpen((open) => !open)}
         >
-          <span />
-          <span />
-          <span />
-        </button>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            {menuOpen
+              ? <path d="M6 6l12 12M18 6 6 18" />
+              : <path d="M4 7h16M4 12h16M4 17h16" />}
+          </svg>
+        </MaterialIconButton>
       </div>
 
       <nav id="site-navigation" className={`site-nav${menuOpen ? ' is-open' : ''}`} aria-label="主导航">

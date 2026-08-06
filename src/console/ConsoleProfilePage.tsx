@@ -1,6 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import '@material/web/button/filled-tonal-button.js'
+import '@material/web/textfield/outlined-text-field.js'
 import { articleApi } from '../articles/api'
 import { ConsoleGate } from '../articles/ConsoleLayout'
+import { MaterialButton, MaterialTextField } from '../material/MaterialControls'
 import {
   DEFAULT_PROFILE_BIO,
   PROFILE_BIO_MAX_LENGTH,
@@ -76,15 +79,16 @@ export function ConsoleProfilePage() {
               </div>
               <output aria-live="polite">{length} / {PROFILE_BIO_MAX_LENGTH}</output>
             </div>
-            <label htmlFor="site-profile-bio">我的简介</label>
-            <textarea
+            <MaterialTextField
               id="site-profile-bio"
+              label="我的简介"
               value={bio}
               maxLength={PROFILE_BIO_MAX_LENGTH}
               rows={10}
+              textarea
               disabled={loading || saving}
-              onChange={(event) => {
-                setBio(event.target.value)
+              onValueChange={(value) => {
+                setBio(value)
                 setNotice('')
               }}
             />
@@ -92,17 +96,17 @@ export function ConsoleProfilePage() {
             {error && <div className="console-profile__message console-profile__message--error" role="alert">{error}</div>}
             {notice && <div className="console-profile__message" role="status">{notice}</div>}
             <div className="console-profile__actions">
-              <button
+              <MaterialButton
                 className="articles-primary-button"
                 type="submit"
                 disabled={loading || saving || !bio.trim() || bio.trim() === savedBio}
               >
                 {saving ? '正在保存…' : '保存简介'}
-              </button>
+              </MaterialButton>
               {error && (
-                <button className="articles-secondary-button" type="button" disabled={loading} onClick={() => void load()}>
+                <MaterialButton variant="tonal" className="articles-secondary-button" type="button" disabled={loading} onClick={() => void load()}>
                   重新读取
-                </button>
+                </MaterialButton>
               )}
             </div>
           </form>

@@ -6,8 +6,11 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
 } from 'react'
+import '@material/web/button/filled-tonal-button.js'
+import '@material/web/button/outlined-button.js'
 import { Link, useParams } from 'react-router-dom'
 import { SitePage } from '../components/SiteChrome'
+import { MaterialButton, MaterialIconButton } from '../material/MaterialControls'
 import { articleApi, ApiError } from './api'
 import { Comments } from './Comments'
 import { formatArticleDate, usePageMeta } from './pageMeta'
@@ -301,7 +304,7 @@ export function ArticlePage() {
             <p className="articles-kicker">ORIGIN OFFLINE</p>
             <h1>暂时读不到这篇文章。</h1>
             <p>{error}</p>
-            <button type="button" className="articles-primary-button" onClick={() => window.location.reload()}>重试</button>
+            <MaterialButton type="button" className="articles-primary-button" onClick={() => window.location.reload()}>重试</MaterialButton>
           </section>
         )}
         {!loading && article && (
@@ -361,8 +364,8 @@ export function ArticlePage() {
                 </nav>
               )}
               <div className="article-share-actions">
-                <button type="button" onClick={() => void copyArticleLink()}>复制链接</button>
-                {canNativeShare && <button type="button" onClick={() => void shareArticle()}>系统分享</button>}
+                <MaterialButton variant="tonal" type="button" onClick={() => void copyArticleLink()}>复制链接</MaterialButton>
+                {canNativeShare && <MaterialButton variant="outlined" type="button" onClick={() => void shareArticle()}>系统分享</MaterialButton>}
                 <p className="article-share-status" role="status" aria-live="polite">{shareStatus}</p>
               </div>
             </section>
@@ -380,7 +383,7 @@ export function ArticlePage() {
         >
           <header className="article-lightbox__header">
             <h2 id="article-lightbox-title">文章图片</h2>
-            <button type="button" aria-label="关闭图片预览" onClick={closeLightbox}>关闭</button>
+            <MaterialIconButton tonal type="button" aria-label="关闭图片预览" onClick={closeLightbox}>×</MaterialIconButton>
           </header>
           <figure className="article-lightbox__figure">
             {lightboxImage && <img src={lightboxImage.src} alt={lightboxImage.alt} />}
@@ -391,8 +394,8 @@ export function ArticlePage() {
           </figure>
           {prepared.images.length > 1 && (
             <nav className="article-lightbox__navigation" aria-label="切换文章图片">
-              <button type="button" aria-label="查看上一张图片" onClick={() => moveLightbox(-1)}>← 上一张</button>
-              <button type="button" aria-label="查看下一张图片" onClick={() => moveLightbox(1)}>下一张 →</button>
+              <MaterialButton variant="tonal" type="button" aria-label="查看上一张图片" onClick={() => moveLightbox(-1)}>← 上一张</MaterialButton>
+              <MaterialButton variant="tonal" type="button" aria-label="查看下一张图片" onClick={() => moveLightbox(1)}>下一张 →</MaterialButton>
             </nav>
           )}
         </dialog>

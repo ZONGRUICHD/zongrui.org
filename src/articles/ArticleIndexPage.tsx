@@ -1,6 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import '@material/web/button/filled-tonal-button.js'
+import '@material/web/chips/filter-chip.js'
+import '@material/web/select/outlined-select.js'
+import '@material/web/select/select-option.js'
+import '@material/web/textfield/outlined-text-field.js'
 import { Link, useSearchParams } from 'react-router-dom'
 import { SitePage } from '../components/SiteChrome'
+import { MaterialButton, MaterialFilterChip, MaterialSelect, MaterialTextField } from '../material/MaterialControls'
 import { articleApi } from './api'
 import { formatArticleDate, usePageMeta } from './pageMeta'
 import type { PublicArticleSummary, Tag } from './types'
@@ -92,30 +98,36 @@ export function ArticleIndexPage() {
           <div className="articles-shell articles-browser__layout">
             <aside className="articles-filters">
               <form onSubmit={submitSearch} role="search">
-                <label htmlFor="article-search">搜索文章</label>
                 <div className="articles-search">
-                  <input id="article-search" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="标题、摘要或正文" />
-                  <button type="submit">搜索</button>
+                  <MaterialTextField id="article-search" type="search" label="搜索文章" value={search} onValueChange={setSearch} placeholder="标题、摘要或正文" />
+                  <MaterialButton type="submit">搜索</MaterialButton>
                 </div>
               </form>
               <div className="articles-filter-group">
                 <p>标签</p>
                 <div className="articles-tag-list">
-                  <button type="button" className={!selectedTag ? 'is-active' : ''} onClick={() => updateFilter({ tag: '' })}>全部</button>
+                  <MaterialFilterChip label="全部" selected={!selectedTag} onClick={() => updateFilter({ tag: '' })} />
                   {tags.map((tag) => (
-                    <button type="button" className={selectedTag === tag.slug ? 'is-active' : ''} onClick={() => updateFilter({ tag: tag.slug })} key={tag.slug}>
-                      {tag.name}{typeof tag.count === 'number' ? ` ${tag.count}` : ''}
-                    </button>
+                    <MaterialFilterChip
+                      label={`${tag.name}${typeof tag.count === 'number' ? ` ${tag.count}` : ''}`}
+                      selected={selectedTag === tag.slug}
+                      onClick={() => updateFilter({ tag: tag.slug })}
+                      key={tag.slug}
+                    />
                   ))}
                 </div>
               </div>
-              <label className="articles-archive">
-                <span>归档</span>
-                <select value={archive} onChange={(event) => updateFilter({ archive: event.target.value })}>
-                  <option value="">全部时间</option>
-                  {Array.from({ length: 8 }, (_, index) => String(new Date().getFullYear() - index)).map((year) => <option value={year} key={year}>{year}</option>)}
-                </select>
-              </label>
+              <div className="articles-archive">
+                <MaterialSelect
+                  label="归档"
+                  value={archive}
+                  options={[
+                    { value: '', label: '全部时间' },
+                    ...Array.from({ length: 8 }, (_, index) => String(new Date().getFullYear() - index)).map((year) => ({ value: year, label: year })),
+                  ]}
+                  onValueChange={(value) => updateFilter({ archive: value })}
+                />
+              </div>
             </aside>
 
             <div className="articles-list" aria-live="polite" aria-busy={loading}>
@@ -139,7 +151,7 @@ export function ArticleIndexPage() {
                   <Link className="article-row__arrow" to={`/articles/${article.slug}`} aria-label={`阅读《${article.title}》`}>→</Link>
                 </article>
               ))}
-              {nextCursor && <button className="articles-load-more" type="button" onClick={loadMore} disabled={loadingMore}>{loadingMore ? '正在读取…' : '更多文章'}</button>}
+              {nextCursor && <MaterialButton className="articles-load-more" variant="tonal" type="button" onClick={loadMore} disabled={loadingMore}>{loadingMore ? '正在读取…' : '更多文章'}</MaterialButton>}
             </div>
           </div>
         </section>

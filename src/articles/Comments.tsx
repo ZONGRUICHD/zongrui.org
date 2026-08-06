@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
+import '@material/web/button/filled-tonal-button.js'
+import '@material/web/textfield/outlined-text-field.js'
+import { MaterialButton, MaterialTextField } from '../material/MaterialControls'
 import { articleApi } from './api'
 import { formatArticleDate } from './pageMeta'
 import type { ArticleComment } from './types'
@@ -87,7 +90,7 @@ function CommentEntry({ comment, onReply }: { comment: ArticleComment; onReply: 
           <time dateTime={comment.createdAt}>{formatArticleDate(comment.createdAt)}</time>
         </header>
         <p>{deleted ? '这条评论已被删除。' : comment.body}</p>
-        {!deleted && comment.status === 'visible' && <button type="button" onClick={() => onReply(comment)}>回复</button>}
+        {!deleted && comment.status === 'visible' && <MaterialButton variant="text" type="button" onClick={() => onReply(comment)}>回复</MaterialButton>}
       </article>
       {comment.replies.length > 0 && (
         <ol className="comment-replies">
@@ -168,14 +171,12 @@ export function Comments({ slug }: { slug: string }) {
       </div>
 
       <form className="comment-form" onSubmit={submit}>
-        {replyTo && <div className="comment-replying">正在回复 {replyTo.nickname}<button type="button" onClick={() => setReplyTo(null)}>取消</button></div>}
-        <label htmlFor="comment-nickname">昵称</label>
-        <input id="comment-nickname" value={nickname} maxLength={24} required onChange={(event) => setNickname(event.target.value)} autoComplete="nickname" />
-        <label htmlFor="comment-body">评论</label>
-        <textarea id="comment-body" value={body} minLength={1} maxLength={2000} required rows={5} onChange={(event) => setBody(event.target.value)} />
+        {replyTo && <div className="comment-replying">正在回复 {replyTo.nickname}<MaterialButton variant="text" type="button" onClick={() => setReplyTo(null)}>取消</MaterialButton></div>}
+        <MaterialTextField id="comment-nickname" label="昵称" value={nickname} maxLength={24} required onValueChange={setNickname} autoComplete="nickname" />
+        <MaterialTextField id="comment-body" label="评论" value={body} minLength={1} maxLength={2000} required rows={5} textarea onValueChange={setBody} />
         <p className="comment-privacy">只保存你填写的昵称和评论。Turnstile 用于防止垃圾信息，不要在评论中留下私密资料。</p>
         <Turnstile onToken={setToken} resetKey={resetKey} />
-        <button className="articles-primary-button" type="submit" disabled={submitting || !token || !nickname.trim() || !body.trim()}>{submitting ? '正在发布…' : '发布评论'}</button>
+        <MaterialButton className="articles-primary-button" type="submit" disabled={submitting || !token || !nickname.trim() || !body.trim()}>{submitting ? '正在发布…' : '发布评论'}</MaterialButton>
         {notice && <p className="comment-notice" role="status">{notice}</p>}
       </form>
 
@@ -184,7 +185,7 @@ export function Comments({ slug }: { slug: string }) {
         {error && <p role="alert">{error}</p>}
         {!loading && !error && comments.length === 0 && <p>还没有评论。</p>}
         {comments.length > 0 && <ol>{comments.map((comment) => <CommentEntry comment={comment} onReply={setReplyTo} key={comment.id} />)}</ol>}
-        {nextCursor && <button type="button" className="articles-secondary-button" onClick={() => void load(nextCursor)}>更多评论</button>}
+        {nextCursor && <MaterialButton variant="tonal" type="button" className="articles-secondary-button" onClick={() => void load(nextCursor)}>更多评论</MaterialButton>}
       </div>
     </section>
   )

@@ -479,3 +479,93 @@
   .gallery-card > button:focus-visible img { transform: none; }
   .gallery-loading span { animation: none; }
 }
+
+/* Material You route layer; kept last because this stylesheet is lazy-loaded. */
+.gallery-page {
+  color: var(--md-sys-color-on-surface);
+  background: var(--md-sys-color-surface);
+}
+
+.gallery-hero {
+  width: min(calc(100% - 2rem), 90rem);
+  min-height: 21rem;
+  margin: 1rem auto;
+  padding-inline: clamp(1.5rem, 5vw, 5rem);
+  color: var(--md-sys-color-on-primary-container);
+  background: var(--md-sys-color-primary-container);
+  border: 0;
+  border-radius: var(--md-sys-shape-corner-xl);
+}
+
+.gallery-hero::after {
+  border-color: color-mix(in srgb, var(--md-sys-color-on-primary-container) 14%, transparent);
+}
+
+.gallery-hero > div > p {
+  color: var(--md-sys-color-primary);
+}
+
+.gallery-hero > span {
+  color: color-mix(in srgb, var(--md-sys-color-on-primary-container) 18%, transparent);
+}
+
+.gallery-browser {
+  width: min(calc(100% - 2rem), 90rem);
+}
+
+.gallery-card > button {
+  overflow: hidden;
+  color: var(--md-sys-color-on-surface);
+  background: var(--md-sys-color-surface-container-low);
+  border: 0;
+  border-radius: var(--md-sys-shape-corner-lg);
+  box-shadow: none;
+}
+
+.gallery-card > button:hover,
+.gallery-card > button:focus-visible {
+  background: var(--md-sys-color-surface-container);
+  box-shadow: 0 12px 30px var(--shadow-color);
+}
+
+.gallery-card__image,
+.gallery-card__image img {
+  border-radius: var(--md-sys-shape-corner-lg) var(--md-sys-shape-corner-lg) 0 0;
+}
+
+.gallery-card__copy {
+  background: transparent;
+}
+
+.gallery-state,
+.gallery-console-card,
+.gallery-console-state,
+.gallery-upload,
+.gallery-console__library {
+  color: var(--md-sys-color-on-surface);
+  background: var(--md-sys-color-surface-container-low);
+  border-color: var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-lg);
+}
+
+md-filled-tonal-button.gallery-more {
+  display: flex;
+  width: max-content;
+  margin: 3rem auto 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+}
+
+.gallery-lightbox {
+  color: var(--md-sys-color-on-inverse-surface);
+  background: var(--md-sys-color-inverse-surface);
+  border-radius: var(--md-sys-shape-corner-xl);
+}
+
+@media (max-width: 760px) {
+  .gallery-hero {
+    width: calc(100% - 1.5rem);
+    border-radius: var(--md-sys-shape-corner-lg);
+  }
+}

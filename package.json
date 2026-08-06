@@ -13,6 +13,8 @@
   "dependencies": {
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
     "@gsap/react": "^2.1.2",
+    "@material/material-color-utilities": "0.4.0",
+    "@material/web": "2.5.0",
     "@tiptap/core": "^3.28.0",
     "@tiptap/extension-link": "^3.28.0",
     "@tiptap/extension-placeholder": "^3.28.0",

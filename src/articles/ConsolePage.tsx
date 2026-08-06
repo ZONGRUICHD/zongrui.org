@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
+import '@material/web/button/filled-tonal-button.js'
+import '@material/web/chips/filter-chip.js'
 import { Link, useSearchParams } from 'react-router-dom'
+import { MaterialButton, MaterialFilterChip } from '../material/MaterialControls'
 import { articleApi } from './api'
 import { ConsoleGate } from './ConsoleLayout'
 import { formatArticleDate } from './pageMeta'
@@ -55,9 +58,7 @@ export function ConsolePage() {
         </header>
         <div className="console-status-tabs" role="group" aria-label="文章状态">
           {statuses.map((item) => (
-            <button type="button" className={status === item.value ? 'is-active' : ''} aria-pressed={status === item.value} onClick={() => setSearchParams(item.value ? { status: item.value } : {})} key={item.value}>
-              {item.label}
-            </button>
+            <MaterialFilterChip label={item.label} selected={status === item.value} onClick={() => setSearchParams(item.value ? { status: item.value } : {})} key={item.value} />
           ))}
         </div>
         <div className="console-article-list" aria-busy={loading}>
@@ -75,7 +76,7 @@ export function ConsolePage() {
               <Link className="console-edit-link" to={`/console/articles/edit/${article.id}`}>编辑 →</Link>
             </article>
           ))}
-          {nextCursor && <button className="articles-secondary-button" type="button" onClick={() => void load(nextCursor)}>更多文章</button>}
+          {nextCursor && <MaterialButton variant="tonal" className="articles-secondary-button" type="button" onClick={() => void load(nextCursor)}>更多文章</MaterialButton>}
         </div>
       </main>
     </ConsoleGate>

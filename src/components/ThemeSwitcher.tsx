@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react'
-
-const THEME_STORAGE_KEY = 'zongrui-theme-preference'
-const THEME_CHANGE_EVENT = 'zongrui-theme-preference-change'
-
-export type ThemePreference = 'system' | 'light' | 'dark'
+import { MaterialIconButton } from '../material/MaterialControls'
+import {
+  applyThemePreference,
+  getThemePreference,
+  isThemePreference,
+  saveThemePreference,
+  THEME_CHANGE_EVENT,
+  type ThemePreference,
+} from '../material/theme'
 
 const preferences: ReadonlyArray<{ value: ThemePreference; label: string }> = [
   { value: 'light', label: '浅色主题' },
@@ -19,44 +23,6 @@ function ThemeIcon({ preference }: { preference: ThemePreference }) {
     return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.4 15.2A8.5 8.5 0 0 1 8.8 3.6 8.7 8.7 0 1 0 20.4 15.2Z" /></svg>
   }
   return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8M12 17v4" /></svg>
-}
-
-function isThemePreference(value: string | null): value is ThemePreference {
-  return value === 'system' || value === 'light' || value === 'dark'
-}
-
-export function getThemePreference(): ThemePreference {
-  try {
-    const value = window.localStorage.getItem(THEME_STORAGE_KEY)
-    return isThemePreference(value) ? value : 'light'
-  } catch {
-    return 'light'
-  }
-}
-
-export function resolveTheme(preference: ThemePreference): 'light' | 'dark' {
-  if (preference !== 'system') return preference
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-}
-
-export function applyThemePreference(preference: ThemePreference) {
-  const resolved = resolveTheme(preference)
-  const root = document.documentElement
-  root.dataset.theme = resolved
-  root.dataset.themePreference = preference
-  root.dataset.resolvedTheme = resolved
-  root.style.colorScheme = resolved
-
-  const themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
-  if (themeColor) themeColor.content = '#d98aa4'
-}
-
-function saveThemePreference(preference: ThemePreference) {
-  try {
-    window.localStorage.setItem(THEME_STORAGE_KEY, preference)
-  } catch {
-    // Privacy modes can deny storage; the active page still receives the selected theme.
-  }
 }
 
 type ThemeSwitcherProps = {
@@ -98,8 +64,9 @@ export function ThemeSwitcher({ className = '' }: ThemeSwitcherProps) {
   return (
     <div className={`theme-switcher${className ? ` ${className}` : ''}`} role="group" aria-label="界面主题">
       {preferences.map(({ value, label }) => (
-        <button
+        <MaterialIconButton
           className={`theme-switcher__option${preference === value ? ' is-active' : ''}`}
+          tonal={preference === value}
           type="button"
           key={value}
           aria-pressed={preference === value}
@@ -108,8 +75,7 @@ export function ThemeSwitcher({ className = '' }: ThemeSwitcherProps) {
           onClick={() => selectPreference(value)}
         >
           <ThemeIcon preference={value} />
-          <span className="sr-only">{label}</span>
-        </button>
+        </MaterialIconButton>
       ))}
     </div>
   )

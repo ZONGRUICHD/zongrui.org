@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
+import { MaterialButton } from '../material/MaterialControls'
 import { articleApi } from './api'
 import { usePageMeta } from './pageMeta'
 import type { AuthSession } from './types'
@@ -75,7 +76,7 @@ export function ConsoleGate({ children }: { children: ReactNode }) {
           <p>{error}请检查网络后重试。</p>
         </div>
         <div className="console-gate__actions">
-          <button className="articles-primary-button" type="button" onClick={retrySession}>重新检查</button>
+          <MaterialButton className="articles-primary-button" type="button" onClick={retrySession}>重新检查</MaterialButton>
           <Link to="/articles">← 回到文章</Link>
         </div>
       </main>
@@ -91,7 +92,7 @@ export function ConsoleGate({ children }: { children: ReactNode }) {
         <h1>网站管理台</h1>
         <p>只允许指定的 GitHub 账号进入。</p>
         {authError && <div className="console-gate__notice" role="alert"><strong>GitHub 登录未完成</strong><p>{authError}</p></div>}
-        <button className="articles-primary-button" type="button" onClick={login}>GitHub 登录</button>
+        <MaterialButton className="articles-primary-button" type="button" onClick={login}>GitHub 登录</MaterialButton>
         <Link to="/articles">← 回到文章</Link>
       </main>
     )
@@ -129,7 +130,7 @@ function ConsoleLayout({ session, children }: { session: AuthSession; children: 
         <div className="console-user">
           {session.user?.avatarUrl && <img src={session.user.avatarUrl} alt="" />}
           <span>{session.user?.login ?? 'ZONGRUICHD'}</span>
-          <button type="button" disabled={loggingOut} onClick={logout}>{loggingOut ? '正在退出…' : '退出'}</button>
+          <MaterialButton variant="text" type="button" disabled={loggingOut} onClick={logout}>{loggingOut ? '正在退出…' : '退出'}</MaterialButton>
         </div>
       </header>
       {children}

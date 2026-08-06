@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { usePageMeta } from './articles/pageMeta'
 import { SitePage } from './components/SiteChrome'
+import { MaterialButton } from './material/MaterialControls'
 
 const HomePage = lazy(() => import('./App'))
 const ArticleIndexPage = lazy(() => import('./articles/ArticleIndexPage').then((module) => ({ default: module.ArticleIndexPage })))
@@ -62,7 +63,7 @@ function NotFoundPage() {
       <main className="article-error" id="main-content">
         <p className="articles-kicker">404 / NOT FOUND</p>
         <h1>这个地址没有页面。</h1>
-        <Link className="articles-primary-button" to="/">回到首页</Link>
+        <MaterialButton className="articles-primary-button" href="/">回到首页</MaterialButton>
       </main>
     </SitePage>
   )
