@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
+import { ThemeSwitcher } from '../components/ThemeSwitcher'
 import { MaterialButton } from '../material/MaterialControls'
-import { PixelShell } from '../pixel/PixelShell'
 import { articleApi } from './api'
 import { usePageMeta } from './pageMeta'
 import type { AuthSession } from './types'
@@ -68,39 +68,37 @@ export function ConsoleGate({ children }: { children: ReactNode }) {
 
   if (error) {
     return (
-      <PixelShell compact>
-        <main className="console-gate" id="main-content">
-          <div className="console-gate__notice" role="alert">
-            <p className="articles-kicker">SESSION CHECK FAILED</p>
-            <strong>Console 暂时不可用</strong>
-            <p>{error}请检查网络后重试。</p>
-          </div>
-          <div className="console-gate__actions">
-            <MaterialButton className="articles-primary-button" type="button" onClick={retrySession}>重新检查</MaterialButton>
-            <Link to="/articles">← 回到文章</Link>
-          </div>
-        </main>
-      </PixelShell>
+      <main className="console-gate" id="main-content">
+        <ThemeSwitcher className="console-gate__theme-switcher" />
+        <div className="console-gate__notice" role="alert">
+          <p className="articles-kicker">SESSION CHECK FAILED</p>
+          <strong>Console 暂时不可用</strong>
+          <p>{error}请检查网络后重试。</p>
+        </div>
+        <div className="console-gate__actions">
+          <MaterialButton className="articles-primary-button" type="button" onClick={retrySession}>重新检查</MaterialButton>
+          <Link to="/articles">← 回到文章</Link>
+        </div>
+      </main>
     )
   }
-  if (!session) return <PixelShell compact><main className="console-gate" id="main-content" aria-busy="true"><p>正在检查管理员身份…</p></main></PixelShell>
+  if (!session) return <main className="console-gate" id="main-content" aria-busy="true"><p>正在检查管理员身份…</p></main>
   if (!session.authenticated) {
     return (
-      <PixelShell compact>
-        <main className="console-gate" id="main-content">
-          <img src="/avatar.jpg" alt="" />
-          <p className="articles-kicker">ZONGRUI / PRIVATE CONSOLE</p>
-          <h1>网站管理台</h1>
-          <p>只允许指定的 GitHub 账号进入。</p>
-          {authError && <div className="console-gate__notice" role="alert"><strong>GitHub 登录未完成</strong><p>{authError}</p></div>}
-          <MaterialButton className="articles-primary-button" type="button" onClick={login}>GitHub 登录</MaterialButton>
-          <Link to="/articles">← 回到文章</Link>
-        </main>
-      </PixelShell>
+      <main className="console-gate" id="main-content">
+        <ThemeSwitcher className="console-gate__theme-switcher" />
+        <img src="/avatar.jpg" alt="" />
+        <p className="articles-kicker">ZONGRUI / PRIVATE CONSOLE</p>
+        <h1>网站管理台</h1>
+        <p>只允许指定的 GitHub 账号进入。</p>
+        {authError && <div className="console-gate__notice" role="alert"><strong>GitHub 登录未完成</strong><p>{authError}</p></div>}
+        <MaterialButton className="articles-primary-button" type="button" onClick={login}>GitHub 登录</MaterialButton>
+        <Link to="/articles">← 回到文章</Link>
+      </main>
     )
   }
 
-  return <PixelShell compact><ConsoleLayout session={session}>{children}</ConsoleLayout></PixelShell>
+  return <ConsoleLayout session={session}>{children}</ConsoleLayout>
 }
 
 function ConsoleLayout({ session, children }: { session: AuthSession; children: ReactNode }) {
@@ -128,6 +126,7 @@ function ConsoleLayout({ session, children }: { session: AuthSession; children: 
           <NavLink to="/console/comments">评论</NavLink>
           <Link to="/" target="_blank">查看网站 ↗</Link>
         </nav>
+        <ThemeSwitcher className="console-theme-switcher" />
         <div className="console-user">
           {session.user?.avatarUrl && <img src={session.user.avatarUrl} alt="" />}
           <span>{session.user?.login ?? 'ZONGRUICHD'}</span>

@@ -1,12 +1,11 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
 import { articleApi } from './articles/api'
 import { usePageMeta } from './articles/pageMeta'
 import { ActivityWalls } from './components/ActivityWalls'
 import { DEFAULT_PROFILE_BIO, ProfileBio } from './components/ProfileBio'
 import { Arrow, SitePage } from './components/SiteChrome'
 import { SiteVisitorCounter } from './components/SiteVisitorCounter'
-import { PixelIcon } from './pixel/PixelIcons'
+import { useHomeMotion } from './motion/useHomeMotion'
 
 function TelegramIcon() {
   return (
@@ -60,12 +59,15 @@ function ContactSection() {
 
   return (
     <section
-      className="contact-section"
+      className="contact-section motion-surface"
       id="contact"
       aria-labelledby="contact-title"
+      data-scroll-reveal
+      data-pointer-surface
     >
+      <span className="contact-section__orbit" data-scroll-drift aria-hidden="true" />
       <div className="contact-section__inner">
-        <div className="contact-section__intro">
+        <div className="contact-section__intro" data-reveal-item>
           <p className="section-kicker">CONTACT / ELSEWHERE</p>
           <h2 id="contact-title">联系方式</h2>
         </div>
@@ -77,6 +79,8 @@ function ContactSection() {
               target="_blank"
               rel="noreferrer"
               key={contact.label}
+              data-reveal-item
+              data-pointer-tilt
             >
               <span className="contact-card__index">0{index + 1}</span>
               <span className="contact-card__mark">{contact.icon}</span>
@@ -90,6 +94,7 @@ function ContactSection() {
           ))}
         </div>
       </div>
+      <span className="motion-line contact-section__line" aria-hidden="true" />
     </section>
   )
 }
@@ -97,11 +102,13 @@ function ContactSection() {
 function WebsiteStories() {
   return (
     <section
-      className="web-stories"
+      className="web-stories motion-surface"
       id="web"
       aria-labelledby="web-title"
+      data-scroll-reveal
+      data-pointer-surface
     >
-      <div className="section-intro">
+      <div className="section-intro" data-reveal-item>
         <div>
           <p className="section-kicker">WEB / MEMORY / NOTES</p>
           <h2 id="web-title">我的网站们</h2>
@@ -114,6 +121,8 @@ function WebsiteStories() {
           href="https://2022314.xyz"
           target="_blank"
           rel="noreferrer"
+          data-reveal-item
+          data-pointer-tilt
         >
           <div className="site-capture site-capture--memory">
             <img
@@ -136,6 +145,8 @@ function WebsiteStories() {
           href="https://zongtech.xyz"
           target="_blank"
           rel="noreferrer"
+          data-reveal-item
+          data-pointer-tilt
         >
           <div className="site-capture site-capture--notes">
             <img
@@ -153,15 +164,15 @@ function WebsiteStories() {
           </div>
         </a>
       </div>
+      <span className="motion-line web-stories__line" aria-hidden="true" />
     </section>
   )
 }
 
 function App() {
-  const navigate = useNavigate()
+  const pageRef = useRef<HTMLElement>(null)
   const [bio, setBio] = useState(DEFAULT_PROFILE_BIO)
-  const [search, setSearch] = useState('')
-  const today = new Date()
+  useHomeMotion(pageRef)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -182,52 +193,40 @@ function App() {
     ogLocale: 'zh_CN',
   })
 
-  const submitSearch = (event: FormEvent) => {
-    event.preventDefault()
-    const query = search.trim()
-    navigate(query ? `/articles?q=${encodeURIComponent(query)}` : '/articles')
-  }
-
   return (
     <SitePage>
-      <main className="home-page" id="main-content">
+      <main className="home-page" id="main-content" ref={pageRef}>
         <section
-          className="hero"
+          className="hero motion-surface"
           id="top"
           aria-labelledby="hero-title"
+          data-pointer-surface
         >
           <div className="hero__ambient" aria-hidden="true">
-            <span className="hero__ambient-disc hero__ambient-disc--one" />
-            <span className="hero__ambient-disc hero__ambient-disc--two" />
+            <span className="hero__ambient-disc hero__ambient-disc--one" data-ambient-float />
+            <span className="hero__ambient-disc hero__ambient-disc--two" data-ambient-float />
+            <span className="hero__ambient-line" data-scroll-drift />
           </div>
           <div className="hero__inner">
-            <div className="pixel-at-a-glance">
-              <time dateTime={today.toISOString()}>{today.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}</time>
-              <span>深圳 · ZongRui 的个人空间</span>
-            </div>
-            <div className="hero-profile">
+            <div className="hero-profile" data-hero-enter="profile" data-pointer-tilt>
               <img className="hero-profile__avatar" src="/avatar.jpg" alt="ZongRui 的企鹅头像" />
               <h1 id="hero-title">ZongRui</h1>
               <p>{'Programming in Ciallo～(∠・ω< )⌒★'}</p>
             </div>
-            <div className="hero-bio-wrap">
+            <div data-hero-enter="bio">
               <ProfileBio bio={bio} className="hero-bio" idPrefix="home-profile" />
             </div>
-            <form className="pixel-launcher-search" role="search" onSubmit={submitSearch}>
-              <PixelIcon name="article" />
-              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索文章" aria-label="搜索文章" />
-              <button type="submit" aria-label="开始搜索"><img src="/avatar.jpg" alt="" /></button>
-            </form>
           </div>
+          <span className="motion-line hero__exit-line" aria-hidden="true" />
         </section>
 
         <WebsiteStories />
         <ContactSection />
-        <div className="home-visitors">
-          <div><SiteVisitorCounter visible /></div>
+        <div className="home-visitors" data-scroll-reveal>
+          <div data-reveal-item><SiteVisitorCounter visible /></div>
         </div>
-        <div className="home-activity" data-activity-root>
-          <div><ActivityWalls /></div>
+        <div className="home-activity" data-scroll-reveal data-activity-root>
+          <div data-reveal-item><ActivityWalls /></div>
         </div>
       </main>
     </SitePage>

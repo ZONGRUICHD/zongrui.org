@@ -7,6 +7,7 @@ import { galleryApi } from './api'
 import { GalleryLightbox } from './GalleryLightbox'
 import type { GalleryImage } from './types'
 import { useGalleryReveal } from './useGalleryReveal'
+import './gallery.css'
 
 export function GalleryPage() {
   const pageRef = useRef<HTMLElement>(null)

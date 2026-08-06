@@ -5,6 +5,7 @@ import { GalleryApiError, galleryApi } from './api'
 import { GalleryItemEditor } from './GalleryItemEditor'
 import { GalleryUploadForm } from './GalleryUploadForm'
 import type { AdminGalleryImage, GalleryStatus } from './types'
+import './gallery.css'
 
 const filters: Array<{ value: '' | GalleryStatus; label: string }> = [
   { value: '', label: '全部' },
