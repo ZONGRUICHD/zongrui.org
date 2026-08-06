@@ -60,14 +60,16 @@ flowchart LR
 | 类别 | 技术与用途 |
 | --- | --- |
 | 语言 | TypeScript / TSX、原生 CSS、Cloudflare Worker JavaScript |
-| UI | React 19.2.7、React DOM 19.2.7、React Hooks；官方 `@material/web` 2.5.0 Web Components 提供按钮、图标按钮、文本框、筛选 Chip 与选择器 |
-| 设计系统 | Material You / Material 3；官方 `@material/material-color-utilities` 0.4.0 从 `#d98aa4` 生成浅色与深色 `--md-sys-color-*` 色彩角色，并补齐新版 surface-container 角色 |
+| UI | React 19.2.7、React DOM 19.2.7、React Hooks；Pixel OS 式自适应 App Shell；官方 `@material/web` 2.5.0 Web Components 提供按钮、图标按钮、涟漪、文本框、筛选 Chip 与选择器 |
+| 设计系统 | Material You / Material 3；官方 `@material/material-color-utilities` 0.4.0 根据樱粉、Pixel 蓝、鼠尾草和日落四种壁纸种子生成浅色与深色 `--md-sys-color-*` 角色，并补齐新版 surface-container 角色 |
 | 路由 | React Router DOM 7.18.1；`BrowserRouter`、`React.lazy` 与 `Suspense` 实现客户端路由和按页拆包 |
 | 交互动效 | GSAP 3.15、`@gsap/react` 与 ScrollTrigger；作用域清理、滚动显现、线条绘制、轻量视差、鼠标倾斜，并完整尊重 `prefers-reduced-motion` 与触屏能力 |
 | 富文本编辑 | TipTap 3.28.0：Core、React、Starter Kit、Link、Placeholder、Underline，以及自定义 `figureImage` 节点 |
 | 数据访问 | 浏览器原生 Fetch API；同源 `/api/articles/v1`；JSON、`FormData`、Cookie 与 CSRF 请求头 |
 | 草稿与离线 | `localStorage`、3 秒空闲自动保存、离线草稿恢复、5 分钟自动修订检查点、revision 冲突提示 |
-| 样式 | 基于官方 Material 3 tokens 的站点布局 CSS、CSS Custom Properties、Grid、Flex、响应式媒体查询、可持久化的系统/浅色/深色三档主题与 `prefers-reduced-motion`；没有使用 Tailwind 或 Sass |
+| 系统交互 | 手机状态栏与下拉快捷设置、导航栏/手势条、平板与桌面导航轨、应用抽屉、Snackbar、动态壁纸取色、亮度遮罩、高对比度、触觉反馈与 View Transitions 页面转场 |
+| 样式 | 基于官方 Material 3 tokens 的 Pixel OS 自适应布局、CSS Custom Properties、Grid、Flex、响应式媒体查询、可持久化的系统/浅色/深色主题与 `prefers-reduced-motion`；没有使用 Tailwind 或 Sass |
+| Web App | `manifest.webmanifest`、standalone/window-controls-overlay 显示模式、动态 `theme-color`、安全区域与移动端系统栏适配 |
 | 字体 | `@fontsource-variable/jetbrains-mono` 5.2.8；本地托管 HarmonyOS Sans SC Bold |
 | 静态媒体 | WebP、SVG、GIF；公开图片展采用响应式非等宽网格与原生 `<dialog>` 灯箱；Vite 指纹资源使用一年 immutable 缓存 |
 | 构建 | Vite 8.1.4、`@vitejs/plugin-react` 6.0.3、TypeScript 7.0.2 strict mode、ES2022、Lightning CSS 1.32.0 |
@@ -192,7 +194,8 @@ restic 保留 14 个日备份、8 个周备份和 12 个月备份。月度恢复
 
 ```text
 .
-├─ src/                         React 前端、Material You 主题、文章、项目、图片、Console 与活动墙组件
+├─ src/                         React 前端、Pixel OS / Material You 系统壳、文章、项目、图片、Console 与活动墙组件
+│  ├─ pixel/                    状态栏、导航、抽屉、快捷设置、系统图标与交互状态
 ├─ functions/                   Cloudflare Pages Function / Worker 边缘逻辑
 ├─ public/                      字体、图片、静态安全头和 Pages 路由配置
 ├─ articles-backend/            FastAPI 博客服务、Alembic、测试与 systemd 单元

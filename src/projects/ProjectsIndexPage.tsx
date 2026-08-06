@@ -4,7 +4,6 @@ import { usePageMeta } from '../articles/pageMeta'
 import { useProjectReveals } from './projectMotion'
 import { technicalProjects } from './projectData'
 import { ProjectShowcaseVisual } from './ProjectVisuals'
-import './projects.css'
 
 const showcaseCopy = {
   robot: {
