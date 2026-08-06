@@ -95,6 +95,8 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
     }
   }
 
+  const closeMenu = () => setMenuOpen(false)
+
   return (
     <header className={`site-header${compact ? ' site-header--compact' : ''}`}>
       <div className="masthead">
@@ -131,15 +133,15 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
       <nav id="site-navigation" className={`site-nav${menuOpen ? ' is-open' : ''}`} aria-label="主导航">
         <div className="site-nav__inner">
           <div className="site-nav__modes">
-            <Link className={articlePageActive ? 'is-active' : undefined} to="/articles" aria-current={articlePageActive ? 'page' : undefined}>
+            <Link className={articlePageActive ? 'is-active' : undefined} to="/articles" aria-current={articlePageActive ? 'page' : undefined} onClick={closeMenu}>
               文章
             </Link>
-            <a href="/#web" {...homeSectionProps('web')}>网页与故事</a>
-            <a href="/#contact" {...homeSectionProps('contact')}>联系方式</a>
-            <Link className={galleryPageActive ? 'is-active' : undefined} to="/gallery" aria-current={galleryPageActive ? 'page' : undefined}>
+            <a href="/#web" {...homeSectionProps('web')} onClick={closeMenu}>网页与故事</a>
+            <a href="/#contact" {...homeSectionProps('contact')} onClick={closeMenu}>联系方式</a>
+            <Link className={galleryPageActive ? 'is-active' : undefined} to="/gallery" aria-current={galleryPageActive ? 'page' : undefined} onClick={closeMenu}>
               图片
             </Link>
-            <Link className={projectsPageActive ? 'is-active' : undefined} to="/projects" aria-current={projectsPageActive ? 'page' : undefined}>
+            <Link className={projectsPageActive ? 'is-active' : undefined} to="/projects" aria-current={projectsPageActive ? 'page' : undefined} onClick={closeMenu}>
               技术作品
             </Link>
           </div>

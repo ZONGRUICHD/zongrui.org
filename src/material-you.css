@@ -262,7 +262,7 @@ md-outlined-select {
 }
 
 .hero {
-  min-height: min(44rem, calc(100svh - 10rem));
+  min-height: clamp(34rem, 64svh, 38rem);
   color: var(--md-sys-color-on-surface);
   background:
     radial-gradient(circle at 82% 16%, var(--md-sys-color-primary-container) 0 12rem, transparent 12.1rem),
@@ -272,7 +272,8 @@ md-outlined-select {
 
 .hero__inner {
   width: min(100%, 80rem);
-  padding: clamp(2rem, 7vw, 6rem);
+  min-height: clamp(32rem, 60svh, 36rem);
+  padding: clamp(2rem, 5vw, 4rem);
 }
 
 .hero-profile {
@@ -318,6 +319,7 @@ md-outlined-select {
 
 .web-stories,
 .contact-section {
+  scroll-margin-top: 7.75rem;
   color: var(--md-sys-color-on-surface);
   background: var(--md-sys-color-surface-container-low);
   border: 0;
@@ -331,6 +333,10 @@ md-outlined-select {
 .story-grid,
 .contact-grid {
   gap: 1rem;
+}
+
+.story-grid {
+  grid-template-columns: minmax(0, 1.65fr) minmax(20rem, 0.95fr);
 }
 
 .story-card,
@@ -420,9 +426,40 @@ md-outlined-select {
 }
 
 .contact-card__mark {
+  width: 3rem;
   color: var(--md-sys-color-on-primary-container);
   background: var(--md-sys-color-primary-container);
   border-radius: var(--md-sys-shape-corner-md);
+}
+
+.contact-section {
+  padding: clamp(4rem, 7vw, 6rem) 3rem;
+}
+
+.contact-section__inner {
+  gap: clamp(3rem, 6vw, 6rem);
+}
+
+.contact-card {
+  grid-template-columns: 1.5rem 3rem minmax(0, 1fr) auto;
+  gap: 1rem;
+  min-height: 7.75rem;
+  padding: 1rem 1.25rem;
+  border-top: 0;
+}
+
+.contact-card:last-child {
+  border-bottom: 0;
+}
+
+.contact-card:hover {
+  padding-inline: 1.25rem;
+  color: var(--md-sys-color-on-surface);
+}
+
+.contact-card__mark svg {
+  width: 1.5rem;
+  height: 1.5rem;
 }
 
 .home-visitors,
@@ -434,6 +471,33 @@ md-outlined-select {
 .activity-walls {
   color: var(--md-sys-color-on-surface);
   background: transparent;
+}
+
+.site-visitors {
+  border-top: 0;
+}
+
+.site-visitors__inner {
+  min-height: 17rem;
+  padding-block: clamp(3rem, 6vw, 4.5rem);
+}
+
+.site-visitors .section-kicker,
+.site-visitors__counter > span {
+  color: var(--md-sys-color-primary);
+}
+
+.site-visitors__copy > p:last-child,
+.site-visitors__counter > small {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.site-visitors__counter {
+  border-color: var(--md-sys-color-outline-variant);
+}
+
+.home-activity {
+  border-bottom: 0;
 }
 
 /* Article index and reading surfaces */
@@ -692,6 +756,22 @@ body .gallery-card__image img,
 
 .site-footer__inner {
   width: min(100%, 90rem);
+  min-height: auto;
+  padding-block: clamp(2.75rem, 5vw, 4rem);
+}
+
+.footer-brand strong,
+.footer-links a {
+  color: var(--md-sys-color-on-surface);
+}
+
+.footer-brand span,
+.footer-meta {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.footer-meta a {
+  color: var(--md-sys-color-primary);
 }
 
 .footer-links a:hover,
@@ -756,7 +836,36 @@ body .gallery-card__image img,
   }
 
   .hero__inner {
+    min-height: auto;
     padding: 1rem;
+  }
+
+  .contact-section {
+    scroll-margin-top: 4.5rem;
+    padding: 3.5rem 0.75rem;
+  }
+
+  .contact-section__inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+  }
+
+  .contact-card {
+    grid-template-columns: 1.25rem 3rem minmax(0, 1fr) auto;
+    min-height: 7.25rem;
+    padding: 0.9rem 1rem;
+  }
+
+  .contact-card:hover {
+    padding-inline: 1rem;
+  }
+
+  .site-visitors__inner {
+    padding-block: 3.25rem;
+  }
+
+  .site-footer__inner {
+    padding: 2.75rem 1rem;
   }
 
   .articles-hero,
